@@ -7,51 +7,45 @@
 <style>
   :root{ --page:#fff; --text:#222428; --brand:#e24a27; --panel:#f6f7f8; --shadow:rgba(0,0,0,.10) }
   html,body{height:100%}
-  body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+  body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-  /* Вводный слайд (фон — картинка, сверху текст) */
-  .intro{position:fixed; inset:0; z-index:20; display:grid; place-items:center; overflow:hidden;
-         background:#000 center/cover no-repeat}
-  .intro::before{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55))}
-  .intro .panel{position:relative; width:min(920px,92vw); background:rgba(255,255,255,.88); color:#202226;
-    border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:18px; box-shadow:0 14px 40px var(--shadow); backdrop-filter:blur(4px)}
-  .intro h1{margin:0 0 10px; font-size:22px}
-  .intro blockquote{margin:12px 0; padding:12px; background:#fff; border-left:4px solid var(--brand); border-radius:8px}
-  .btn{cursor:pointer; border:0; border-radius:12px; background:var(--brand); color:#fff; font-weight:700; padding:10px 14px; box-shadow:0 6px 18px rgba(226,74,39,.25)}
+  /* Вводный экран */
+  .intro{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow:hidden;background:#000 center/cover no-repeat}
+  .intro::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.55))}
+  .intro .panel{position:relative;width:min(920px,92vw);background:rgba(255,255,255,.88);color:#202226;border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:18px;box-shadow:0 14px 40px var(--shadow);backdrop-filter:blur(4px)}
+  .intro h1{margin:0 0 10px;font-size:22px}
+  .intro blockquote{margin:12px 0;padding:12px;background:#fff;border-left:4px solid var(--brand);border-radius:8px}
+  .btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25)}
 
   /* HUD */
-  .hud{position:sticky; top:0; display:flex; gap:10px; align-items:center; padding:10px 14px;
-       background:linear-gradient(180deg,#fff,rgba(255,255,255,.86)); z-index:5; border-bottom:1px solid rgba(0,0,0,.06)}
-  .badge{display:inline-flex; gap:8px; align-items:center; background:#fff; padding:8px 12px; border-radius:999px; border:1px solid rgba(0,0,0,.06)}
-  .brand{color:var(--brand); font-weight:700}
-  .progress{flex:1; height:8px; background:#eceff1; border-radius:999px; overflow:hidden}
-  .bar{height:100%; width:0; background:var(--brand); transition:width .35s ease}
+  .hud{position:sticky;top:0;display:flex;gap:10px;align-items:center;padding:10px 14px;background:linear-gradient(180deg,#fff,rgba(255,255,255,.86));z-index:5;border-bottom:1px solid rgba(0,0,0,.06)}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:#fff;padding:8px 12px;border-radius:999px;border:1px solid rgba(0,0,0,.06)}
+  .brand{color:var(--brand);font-weight:700}
+  .progress{flex:1;height:8px;background:#eceff1;border-radius:999px;overflow:hidden}
+  .bar{height:100%;width:0;background:var(--brand);transition:width .35s ease}
 
   /* Игровая область + правый блок */
-  .play-wrap{max-width:1200px; margin:18px auto; padding:0 12px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
-  .stage-wrap{position:relative; flex:1 1 680px; min-width:320px; aspect-ratio:16/10}
-  .stage{position:relative; width:100%; height:100%; overflow:hidden; border-radius:16px; background:#ddd center/cover no-repeat;
-         box-shadow:0 12px 36px var(--shadow); border:1px solid rgba(0,0,0,.06)}
-  .layer{position:absolute; inset:0}
+  .play-wrap{max-width:1200px;margin:18px auto;padding:0 12px;display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  .stage-wrap{position:relative;flex:1 1 680px;min-width:320px;aspect-ratio:16/10}
+  .stage{position:relative;width:100%;height:100%;overflow:hidden;border-radius:16px;background:#ddd center/cover no-repeat;box-shadow:0 12px 36px var(--shadow);border:1px solid rgba(0,0,0,.06)}
+  .layer{position:absolute;inset:0}
   #bg{transition:opacity .25s ease}
-  .dock{width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px}
-  .pill{background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:10px 14px; color:#444}
+  .dock{width:100%;display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:10px}
+  .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:10px 14px;color:#444}
 
-  .side{flex:0 0 min(360px,32vw); background:var(--panel); border:1px solid rgba(0,0,0,.06); border-radius:16px;
-        padding:16px; box-shadow:0 10px 24px var(--shadow); display:none}
+  .side{flex:0 0 min(360px,32vw);background:var(--panel);border:1px solid rgba(0,0,0,.06);border-radius:16px;padding:16px;box-shadow:0 10px 24px var(--shadow);display:none}
   .side h3{margin:6px 0 8px}
-  .side .hint{margin:10px 0 0; background:#fff; border:1px dashed rgba(0,0,0,.2); border-radius:10px; padding:10px 12px}
+  .side .hint{margin:10px 0 0;background:#fff;border:1px dashed rgba(0,0,0,.2);border-radius:10px;padding:10px 12px}
 
-  .toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#111; color:#fff; padding:10px 14px; border-radius:12px; display:none; box-shadow:0 10px 24px rgba(0,0,0,.25)}
-  .loader{position:absolute; inset:0; display:grid; place-items:center; background:rgba(255,255,255,.35); z-index:4}
-  .ring{width:42px; height:42px; border-radius:50%; border:4px solid rgba(0,0,0,.12); border-top-color:var(--brand); animation:spin .9s linear infinite}
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;display:none;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+  .loader{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.35);z-index:4}
+  .ring{width:42px;height:42px;border-radius:50%;border:4px solid rgba(0,0,0,.12);border-top-color:var(--brand);animation:spin .9s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .devbox{outline:2px dashed #ffb703; background:transparent}
 </style>
 </head>
 <body>
 
-<!-- Вводный слайд (фон зададим из JS после загрузки файла) -->
+<!-- Вводный слайд -->
 <section id="intro" class="intro">
   <div class="panel">
     <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
@@ -65,19 +59,19 @@
 </section>
 
 <!-- HUD -->
-<header class="hud" aria-live="polite">
+<header class="hud">
   <div class="badge">Уровень: <span id="levelLabel" class="brand">1/1</span></div>
   <div class="progress"><div id="progressBar" class="bar"></div></div>
   <button id="hintBtn" class="btn" type="button">Подсказка</button>
 </header>
 
-<!-- Игровая область + правый текстовый блок -->
+<!-- Игра -->
 <section class="play-wrap" aria-hidden="true">
   <div class="stage-wrap">
-    <div id="stage" class="stage" role="application" aria-label="Игровая сцена">
+    <div id="stage" class="stage">
       <div id="bg" class="layer"></div>
       <div id="actors" class="layer"></div>
-      <div id="loader" class="loader" hidden><div class="ring" aria-label="Загрузка…"></div></div>
+      <div id="loader" class="loader" hidden><div class="ring"></div></div>
     </div>
     <div class="dock">
       <div id="levelTask" class="pill">Найди Шагуню на картинке</div>
@@ -85,7 +79,7 @@
     </div>
   </div>
 
-  <!-- Правый блок появляется после найденного Шагуни на уровне 1 -->
+  <!-- Правый блок -->
   <aside id="sidePanel" class="side">
     <h3>Доброе утро!</h3>
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
@@ -99,132 +93,111 @@
 <div id="toast" class="toast"></div>
 
 <script>
-/* ===== Пути к файлам (поменяй при необходимости) ===== */
+/* === Пути для GitHub (корень репозитория) === */
 const ASSETS = {
-  start: 'assets/start.jpg',
-  lvl1: 'assets/lvl1.jpg',
-  lvl1found: 'assets/lvl1found.jpg'
+  start: 'start.jpg',
+  lvl1: 'lvl1.jpg',
+  lvl1found: 'lvl1found.jpg'
 };
 
-/* ============== Конфиг уровней ============== */
 const GAME_CONFIG = {
   levels: [{
     bg: ASSETS.lvl1,
     bgFound: ASSETS.lvl1found,
-    hotspot: { x: 90, y: 46, w: 8, h: 18 }, // зона клика (справа у правой стены правого домика)
-    hint: '' // на 1-м уровне подсказки отключены
+    hotspot: { x: 90, y: 46, w: 8, h: 18 },
+    hint: ''
   }]
 };
-/* ============================================ */
 
 const $ = s => document.querySelector(s);
 const intro = $('#intro'), startBtn = $('#startBtn');
 const playWrap = document.querySelector('.play-wrap');
-const stage = $('#stage'), bgLayer = $('#bg'), actors = $('#actors'), loader = $('#loader');
+const stage = $('#stage'), bgLayer = $('#bg'), loader = $('#loader');
 const sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn');
 const levelLabel = $('#levelLabel'), progressBar = $('#progressBar'), levelTask = $('#levelTask');
 const toast = $('#toast');
 
-let state = { levelIndex: 0, score: 0, started:false };
+let state = { levelIndex: 0, started:false };
 
-/* Helpers */
 function preload(src){
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=> resolve(src);
-    img.onerror = ()=> reject(new Error('Не удалось загрузить: '+src));
-    img.src = src + ((/\?/.test(src))?'':''); // без кэшерезки
+  return new Promise((res,rej)=>{
+    const img=new Image();
+    img.onload=()=>res(src);
+    img.onerror=()=>rej(src);
+    img.src=src;
   });
 }
 function setBg(url){
   bgLayer.style.opacity='0';
-  setTimeout(()=>{ bgLayer.style.background = `center/cover no-repeat url('${url}')`; bgLayer.style.opacity='1'; }, 120);
+  setTimeout(()=>{ bgLayer.style.background=`center/cover no-repeat url('${url}')`; bgLayer.style.opacity='1'; },120);
 }
-function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block';
-  clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
-function clickToPercent(ev){
-  const rect = stage.getBoundingClientRect();
-  return { x:(ev.clientX-rect.left)/rect.width*100, y:(ev.clientY-rect.top)/rect.height*100 };
+function showToast(msg,t=1600){
+  toast.textContent=msg; toast.style.display='block';
+  clearTimeout(showToast.tid);
+  showToast.tid=setTimeout(()=>toast.style.display='none',t);
 }
-function pointInRect(pt, r){
-  const L=r.x-r.w/2, R=r.x+r.w/2, T=r.y-r.h/2, B=r.y+r.h/2;
-  return pt.x>=L && pt.x<=R && pt.y>=T && pt.y<=B;
+function clickToPercent(e){
+  const r=stage.getBoundingClientRect();
+  return {x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100};
+}
+function pointInRect(pt,r){
+  const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2;
+  return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B;
 }
 
-/* Intro: грузим фон корректно */
+/* Intro загрузка */
 preload(ASSETS.start).then(src=>{
-  intro.style.backgroundImage = `url('${src}')`;
-}).catch(e=>{
-  console.warn(e);
-  // покажем аккуратное сообщение поверх белого фона
-  intro.style.background = '#fff';
+  intro.style.backgroundImage=`url('${src}')`;
+}).catch(src=>{
+  intro.style.background='#fff';
   intro.querySelector('.panel').insertAdjacentHTML('beforeend',
-    `<p style="color:#b00020;margin-top:10px">⚠️ Не удалось загрузить фоновое изображение стартового экрана.<br>Проверь путь: <code>${ASSETS.start}</code></p>`);
+    `<p style="color:#b00020;margin-top:10px">⚠️ Не удалось загрузить <code>${src}</code>. Проверь путь или имя файла.</p>`);
 });
 
 /* Старт игры */
 startBtn.addEventListener('click', async ()=>{
-  // прячем интро, показываем игру
   intro.style.display='none';
   playWrap.removeAttribute('aria-hidden');
-  state.started = true;
+  state.started=true;
   await startLevel(0);
 });
 
-/* Отрисовка уровня */
 async function startLevel(i){
-  state.levelIndex = i;
-  const L = GAME_CONFIG.levels[i];
-
-  // подсказка скрыта на 1-м уровне
-  hintBtn.style.display = (i === 0) ? 'none' : 'inline-flex';
-
-  levelLabel.textContent = `${i+1}/${GAME_CONFIG.levels.length}`;
-  progressBar.style.width = (i/GAME_CONFIG.levels.length*100) + '%';
-  levelTask.textContent = 'Найди Шагуню на картинке';
-
-  actors.innerHTML=''; sidePanel.style.display='none';
+  const L=GAME_CONFIG.levels[i];
+  levelLabel.textContent=`${i+1}/${GAME_CONFIG.levels.length}`;
+  progressBar.style.width=(i/GAME_CONFIG.levels.length*100)+'%';
+  levelTask.textContent='Найди Шагуню на картинке';
+  sidePanel.style.display='none';
+  hintBtn.style.display=(i===0)?'none':'inline-flex';
   loader.hidden=false;
 
   try{
     await preload(L.bg);
     setBg(L.bg);
-    if(L.bgFound) preload(L.bgFound); // параллельно
-  }catch(e){
-    console.warn(e);
-    showToast('Не удалось загрузить фон уровня', 2200);
+    if(L.bgFound) preload(L.bgFound);
+  }catch(src){
+    showToast('Не удалось загрузить '+src,2200);
   }finally{
     loader.hidden=true;
   }
 
-  // клик по сцене
-  stage.onclick = (ev)=>{
-    const pt = clickToPercent(ev);
-    if (L.hotspot && pointInRect(pt, L.hotspot)){
+  stage.onclick=(ev)=>{
+    const pt=clickToPercent(ev);
+    if(L.hotspot&&pointInRect(pt,L.hotspot)){
       onFound(L);
-    } else {
-      stage.animate([{transform:'scale(1)'},{transform:'scale(1.01)'},{transform:'scale(1)'}], {duration:140});
-      showToast('Не здесь 😊 Попробуй ещё!');
-    }
+    } else showToast('Не здесь 😊 Попробуй ещё!');
   };
 }
 
-/* Попадание */
 function onFound(L){
-  // лёгкий зум
-  stage.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}], {duration:320, easing:'ease'});
+  stage.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:320});
   if(L.bgFound) setBg(L.bgFound);
-
-  // правый блок для уровня 1
-  if(state.levelIndex === 0){
-    sidePanel.style.display='block';
-  }
+  if(state.levelIndex===0){ sidePanel.style.display='block'; }
 }
 
-/* Подсказка (будет активна со 2-го уровня) */
 hintBtn.addEventListener('click', ()=>{
   if(state.levelIndex===0) return;
-  showToast('Подсказка: присмотрись к светлым пятнам.', 2200);
+  showToast('Подсказка: присмотрись к светлым пятнам.',2200);
 });
 </script>
 </body>
