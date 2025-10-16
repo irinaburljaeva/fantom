@@ -7,26 +7,18 @@
 <style>
   :root{ --page:#fff; --text:#222428; --brand:#e24a27; --panel:#f6f7f8; --shadow:rgba(0,0,0,.10) }
   html,body{height:100%}
-  body{margin:0;background:var(--page);color:var(--text);
-       font:16px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif}
+  body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-  /* ======= Интро (компактное, 60–70vh, с реальным <img>) ======= */
+  /* ======= Интро ======= */
   .intro-wrap{max-width:1200px; margin:20px auto 10px; padding:0 12px}
-  .intro{
-    position:relative; overflow:hidden; border-radius:20px; height:min(70vh, 680px);
-    box-shadow:0 18px 48px var(--shadow); border:1px solid rgba(0,0,0,.06);
-    background:#fafafa;
-  }
+  .intro{position:relative; overflow:hidden; border-radius:20px; height:min(70vh, 680px);
+         box-shadow:0 18px 48px var(--shadow); border:1px solid rgba(0,0,0,.06); background:#fafafa}
   .intro figure{position:absolute; inset:0; margin:0}
-  .intro img{
-    width:100%; height:100%; object-fit:cover; display:block; filter:brightness(.85); opacity:0; transition:opacity .3s ease;
-  }
+  .intro img{width:100%; height:100%; object-fit:cover; display:block; filter:brightness(.85); opacity:0; transition:opacity .3s ease}
   .intro img.ready{opacity:1}
   .intro .veil{position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45))}
-  .intro .panel{
-    position:relative; z-index:1; max-width:820px; margin:14px; background:rgba(255,255,255,.9); color:#202226;
-    border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:18px; backdrop-filter:blur(4px)
-  }
+  .intro .panel{position:relative; z-index:1; max-width:820px; margin:14px; background:rgba(255,255,255,.9); color:#202226;
+    border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:18px; backdrop-filter:blur(4px)}
   .intro h1{margin:0 0 10px;font-size:22px}
   .intro blockquote{margin:12px 0; padding:12px; background:#fff; border-left:4px solid var(--brand); border-radius:8px}
   .btn{cursor:pointer; border:0; border-radius:12px; background:var(--brand); color:#fff; font-weight:700; padding:10px 14px;
@@ -41,7 +33,7 @@
   .bar{height:100%; width:0; background:var(--brand); transition:width .35s ease}
   .pill{background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:10px 14px; color:#444}
 
-  /* ======= Игровая область ======= */
+  /* ======= Игра + правый блок ======= */
   .play-wrap{max-width:1200px; margin:10px auto 24px; padding:0 12px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
   .stage-wrap{position:relative; flex:1 1 680px; min-width:320px; aspect-ratio:16/10}
   .stage{position:relative; width:100%; height:100%; overflow:hidden; border-radius:16px; background:#ddd center/cover no-repeat;
@@ -50,21 +42,42 @@
   #bg{transition:opacity .25s ease}
   .dock{width:100%; display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px}
 
-  /* ======= Правый блок (после нахождения) ======= */
-  .side{flex:0 0 min(360px,32vw); background:var(--panel); border:1px solid rgba(0,0,0,.06); border-radius:16px;
+  .side{flex:0 0 min(380px,34vw); background:var(--panel); border:1px solid rgba(0,0,0,.06); border-radius:16px;
         padding:16px; box-shadow:0 10px 24px var(--shadow); display:none}
   .side h3{margin:6px 0 8px}
   .side .hint{margin:10px 0 0; background:#fff; border:1px dashed rgba(0,0,0,.2); border-radius:10px; padding:10px 12px}
+  .side .btns{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
 
   .toast{position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#111; color:#fff; padding:10px 14px; border-radius:12px; display:none; box-shadow:0 10px 24px rgba(0,0,0,.25)}
   .loader{position:absolute; inset:0; display:grid; place-items:center; background:rgba(255,255,255,.35); z-index:4}
   .ring{width:42px; height:42px; border-radius:50%; border:4px solid rgba(0,0,0,.12); border-top-color:var(--brand); animation:spin .9s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ======= Модалка отчёта ======= */
+  .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.4); z-index:15; padding:16px}
+  .card{width:min(520px,92vw); background:#fff; color:#222; border:1px solid rgba(0,0,0,.08); border-radius:14px; padding:16px; box-shadow:0 16px 40px var(--shadow)}
+  .card h4{margin:0 0 10px}
+  .row{display:flex; gap:10px; align-items:center; margin:6px 0}
+  .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:10px}
+  .btn.secondary{background:#e7eaee; color:#222; box-shadow:none}
+
+  /* ======= Анимация «дым → сердце» ======= */
+  .celebrate{position:absolute; inset:0; display:none; place-items:center; pointer-events:none}
+  .heart{font-size:64px; opacity:0; transform:scale(.7); animation:pop 1.2s ease forwards}
+  @keyframes pop{
+    0%{opacity:0; transform:scale(.7) translateY(20px)}
+    50%{opacity:1; transform:scale(1) translateY(-4px)}
+    100%{opacity:0; transform:scale(1.15) translateY(-24px)}
+  }
+
+  /* ======= Dev-хелперы ======= */
+  .devbox{outline:2px dashed #ffb703; background:transparent}
+  .coords{position:fixed; top:64px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:6px 10px; border-radius:10px; display:none; z-index:9}
 </style>
 </head>
 <body>
 
-<!-- ===== Интро (компактный блок) ===== -->
+<!-- ===== Интро ===== -->
 <div class="intro-wrap" id="introWrap">
   <section id="intro" class="intro">
     <figure><img id="introImg" alt="Осенний лес"></figure>
@@ -93,6 +106,7 @@
   <div class="stage-wrap">
     <div id="stage" class="stage" role="application" aria-label="Игровая сцена">
       <div id="bg" class="layer"></div>
+      <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
       <div id="loader" class="loader" hidden><div class="ring"></div></div>
     </div>
     <div class="dock">
@@ -106,129 +120,146 @@
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
     <div class="hint">
       <div>🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.</div>
-      <div style="margin-top:6px;">🎁 <b>После выполнения:</b> на экране появляется анимация — «дым превращается в сердце».</div>
+      <div style="margin-top:6px;">🎁 После выполнения появится мини-анимация «дым → сердце» и откроется следующий уровень.</div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="reportBtn" type="button">Отчитаться</button>
+      <button class="btn secondary" id="nextBtn" type="button" disabled>Следующий уровень</button>
     </div>
   </aside>
 </section>
 
+<!-- Модалка отчёта -->
+<section id="reportModal" class="modal" aria-hidden="true">
+  <div class="card" role="dialog" aria-modal="true">
+    <h4>Отчёт по заданию</h4>
+    <div class="row"><input type="radio" id="opt1" name="task" value="steps"><label for="opt1">Я прошёл(ла) 300 шагов</label></div>
+    <div class="row"><input type="radio" id="opt2" name="task" value="warmup"><label for="opt2">Я сделал(а) зарядку 2 минуты</label></div>
+    <div class="row" style="flex-direction:column;align-items:stretch;">
+      <label for="note">Комментарий (необязательно)</label>
+      <textarea id="note" rows="3" style="width:100%;padding:8px;border-radius:8px;border:1px solid #e0e3e7"></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn secondary" id="cancelReport" type="button">Отмена</button>
+      <button class="btn" id="submitReport" type="button">Готово</button>
+    </div>
+  </div>
+</section>
+
 <div id="toast" class="toast"></div>
+<div id="coords" class="coords"></div>
 
 <script>
-/* ===== Пути к файлам (GitHub — из корня репозитория) ===== */
-const ASSETS = {
-  start: 'start.jpg',
-  lvl1: 'lvl1.jpg',
-  lvl1found: 'lvl1found.jpg'
-};
+/* === Пути (корень GitHub) === */
+const ASSETS = { start:'start.jpg', lvl1:'lvl1.jpg', lvl1found:'lvl1found.jpg' };
 
+/* === Конфиг уровней === */
 const GAME_CONFIG = {
   levels: [{
     bg: ASSETS.lvl1,
     bgFound: ASSETS.lvl1found,
-    hotspot: { x: 90, y: 46, w: 8, h: 18 }, // зона клика: справа у правой стены правого домика
-    hint: '' // подсказок на 1-м уровне нет
+    // Точная зона клика: у правой стены правого домика
+    hotspot: { x: 95, y: 43, w: 6, h: 18 },  // ← подогнано ближе к «правильно»
+    hint: ''
   }]
 };
 
 const $ = s => document.querySelector(s);
 const introImg = $('#introImg'), introWrap = $('#introWrap'), startBtn = $('#startBtn');
-const gameWrap = $('#gameWrap'), stage = $('#stage'), bgLayer = $('#bg'), loader = $('#loader');
-const sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'), levelLabel = $('#levelLabel'), progressBar = $('#progressBar'), levelTask = $('#levelTask');
-const toast = $('#toast');
+const gameWrap = $('#gameWrap'), stage = $('#stage'), bgLayer = $('#bg'), loader = $('#loader'), celebrate = $('#celebrate');
+const sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'), levelLabel = $('#levelLabel'), progressBar = $('#progressBar'), levelTask = $('#levelTask'), nextBtn = $('#nextBtn'), reportBtn = $('#reportBtn');
+const toast = $('#toast'), coordsBox = $('#coords');
+const reportModal = $('#reportModal'), cancelReport = $('#cancelReport'), submitReport = $('#submitReport');
 
-let state = { levelIndex: 0, started:false, score:0 };
+let state = { levelIndex: 0, started:false, score:0, DEV:false, GRAB:false };
 
-function preload(src){
-  return new Promise((res,rej)=>{
-    const im=new Image();
-    im.onload = ()=> res(src);
-    im.onerror= ()=> rej(src);
-    im.src = src;
-  });
-}
-function setBg(url){
-  bgLayer.style.opacity='0';
-  // небольшая задержка на плавность
-  setTimeout(()=>{ bgLayer.style.background = `center/cover no-repeat url('${url}')`; bgLayer.style.opacity='1'; }, 80);
-}
-function showToast(msg,t=1600){
-  toast.textContent=msg; toast.style.display='block';
-  clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t);
-}
-function clickToPercent(e){
-  const r = stage.getBoundingClientRect();
-  return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 };
-}
-function pointInRect(pt,r){
-  const L=r.x-r.w/2, R=r.x+r.w/2, T=r.y-r.h/2, B=r.y+r.h/2;
-  return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B;
-}
+function preload(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(src); im.onerror=()=>rej(src); im.src=src; }); }
+function setBg(url){ bgLayer.style.opacity='0'; setTimeout(()=>{ bgLayer.style.background=`center/cover no-repeat url('${url}')`; bgLayer.style.opacity='1'; },80); }
+function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
+function clickToPercent(e){ const r=stage.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100}; }
+function pointInRect(pt,r){ const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2; return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B; }
 
-/* ===== Загрузка интро-изображения надёжно ===== */
-preload(ASSETS.start).then(src=>{
-  introImg.src = src;
-  introImg.onload = ()=> introImg.classList.add('ready');
-}).catch(src=>{
-  // не критично: покажем чистый белый фон и предупредим
-  introImg.remove();
-  const p = document.createElement('p');
-  p.style.cssText='position:absolute;right:16px;bottom:12px;color:#b00020;background:#fff;padding:6px 10px;border-radius:10px';
-  p.textContent = '⚠️ Не удалось загрузить ' + src;
-  $('#intro').appendChild(p);
-});
+/* Интро-фото */
+preload(ASSETS.start).then(src=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); }).catch(()=>{ introImg.remove(); });
 
-/* ===== Старт игры ===== */
-startBtn.addEventListener('click', async ()=>{
-  introWrap.style.display='none';
-  gameWrap.removeAttribute('aria-hidden');
-  state.started = true;
-  await startLevel(0);
-});
+/* Старт */
+startBtn.addEventListener('click', async ()=>{ introWrap.style.display='none'; gameWrap.removeAttribute('aria-hidden'); state.started=true; await startLevel(0); });
 
-/* ===== Инициализация уровня ===== */
 async function startLevel(i){
   state.levelIndex = i;
   sidePanel.style.display='none';
-  hintBtn.style.display = (i === 0) ? 'none' : 'inline-flex';
+  hintBtn.style.display = (i===0)?'none':'inline-flex';
   levelLabel.textContent = `${i+1}/${GAME_CONFIG.levels.length}`;
   progressBar.style.width = (i/GAME_CONFIG.levels.length*100)+'%';
   levelTask.textContent = 'Найди Шагуню на картинке';
+  nextBtn.disabled = !isLevelDone(i);
 
-  loader.hidden = false;
+  loader.hidden=false;
   const L = GAME_CONFIG.levels[i];
-
-  // защитимся от «вечного» лоадера: что бы ни случилось, спрячем через 1500 мс
-  const safety = setTimeout(()=> loader.hidden = true, 1500);
-
-  try{
-    const src = await preload(L.bg);
-    setBg(src);
-    if(L.bgFound) preload(L.bgFound); // предзагрузка «после клика»
-  }catch(src){
-    showToast('Не удалось загрузить '+src, 2200);
-  }finally{
-    clearTimeout(safety);
-    loader.hidden = true;
-  }
+  const safety = setTimeout(()=> loader.hidden=true, 1500);
+  try{ const src=await preload(L.bg); setBg(src); if(L.bgFound) preload(L.bgFound); }catch(e){ showToast('Не удалось загрузить фон',2200); }
+  finally{ clearTimeout(safety); loader.hidden=true; }
 
   stage.onclick = (ev)=>{
     const pt = clickToPercent(ev);
-    if(L.hotspot && pointInRect(pt, L.hotspot)){
-      onFound(L);
-    } else {
-      // лёгкий «ошибочный» импульс
-      stage.animate([{transform:'scale(1)'},{transform:'scale(1.01)'},{transform:'scale(1)'}], {duration:140});
-      showToast('Не здесь 😊 Попробуй ещё!');
-    }
+    if (state.GRAB){ coordsBox.textContent = `x:${pt.x.toFixed(1)} y:${pt.y.toFixed(1)}`; coordsBox.style.display='block'; return; }
+    if (L.hotspot && pointInRect(pt, L.hotspot)){ onFound(L); }
+    else { stage.animate([{transform:'scale(1)'},{transform:'scale(1.01)'},{transform:'scale(1)'}], {duration:140}); showToast('Не здесь 😊 Попробуй ещё!'); }
   };
 }
 
-/* ===== Попадание ===== */
+/* После нахождения */
 function onFound(L){
   stage.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}], {duration:320, easing:'ease'});
   if(L.bgFound) setBg(L.bgFound);
-  if(state.levelIndex === 0){ sidePanel.style.display='block'; }
+  sidePanel.style.display='block';
+  state.score += 100; $('#score').textContent = state.score;
 }
+
+/* Модалка «Отчитаться» */
+reportBtn.addEventListener('click', ()=>{ reportModal.style.display='grid'; reportModal.setAttribute('aria-hidden','false'); });
+cancelReport.addEventListener('click', ()=>{ reportModal.style.display='none'; reportModal.setAttribute('aria-hidden','true'); });
+
+submitReport.addEventListener('click', ()=>{
+  const done = document.querySelector('input[name="task"]:checked');
+  if(!done){ showToast('Выбери вариант выполнения 🙂'); return; }
+  // сохранить статус
+  localStorage.setItem('level_done_0','1');
+  reportModal.style.display='none'; reportModal.setAttribute('aria-hidden','true');
+  // анимация «дым → сердце»
+  celebrate.style.display='grid';
+  celebrate.firstElementChild.style.animation='none'; // перезапуск
+  void celebrate.firstElementChild.offsetWidth;
+  celebrate.firstElementChild.style.animation='';
+  setTimeout(()=> celebrate.style.display='none', 1200);
+  nextBtn.disabled = false;
+  showToast('Отлично! Уровень засчитан ✅', 1800);
+});
+nextBtn.addEventListener('click', ()=>{
+  // если будут следующие уровни — здесь переводим на них
+  showToast('Все уровни пройдены! 🎉', 2000);
+});
+
+/* helpers */
+function isLevelDone(i){ return localStorage.getItem('level_done_'+i)==='1'; }
+
+/* Dev: D — хитбокс, G — режим снятия координат */
+document.addEventListener('keydown', (e)=>{
+  const L = GAME_CONFIG.levels[state.levelIndex];
+  if(e.key.toLowerCase()==='d'){
+    state.DEV = !state.DEV;
+    document.querySelectorAll('.devbox').forEach(n=>n.remove());
+    if(state.DEV && L.hotspot){
+      const el=document.createElement('div');
+      el.className='devbox';
+      Object.assign(el.style,{position:'absolute',
+        left:`${L.hotspot.x - L.hotspot.w/2}%`, top:`${L.hotspot.y - L.hotspot.h/2}%`,
+        width:`${L.hotspot.w}%`, height:`${L.hotspot.h}%`, pointerEvents:'none'});
+      stage.appendChild(el);
+    }
+  }
+  if(e.key.toLowerCase()==='g'){ state.GRAB = !state.GRAB; coordsBox.style.display = state.GRAB?'block':'none'; }
+});
 </script>
 </body>
 </html>
