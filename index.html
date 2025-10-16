@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ШАГАЙ ДОМА — Найди призрака лагеря</title>
+<style>
+  :root{
+    --bg:#0f0f10;           /* цвет подложки вокруг сцены */
+    --ui:#ffffff;           /* цвет текста UI */
+    --brand:#e24a27;        /* акцентный цвет */
+    --panel:#1b1c1f;        /* панели/модалки */
+    --glass:rgba(18,19,22,.72);
+  }
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ui);
+    font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  }
+
+  /* Шапка и индикаторы */
+  .hud{
+    position:fixed; inset:0 0 auto 0; height:56px; display:flex; align-items:center; gap:10px;
+    padding:10px 14px; background:linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+    z-index:5; pointer-events:none;
+  }
+  .badge{pointer-events:auto; display:inline-flex; gap:8px; align-items:center;
+    background:rgba(255,255,255,.08); padding:8px 12px; border-radius:999px; backdrop-filter:saturate(130%) blur(4px)}
+  .brand{color:var(--brand); font-weight:700}
+  .progress{flex:1; height:8px; background:rgba(255,255,255,.15); border-radius:999px; overflow:hidden}
+  .bar{height:100%; width:0; background:var(--brand); transition:width .35s ease}
+
+  .btn{
+    pointer-events:auto; user-select:none; cursor:pointer; border:0; border-radius:12px;
+    background:var(--brand); color:#fff; font-weight:700; padding:10px 14px;
+    box-shadow:0 6px 18px rgba(226,74,39,.35); transition:.2s transform ease;
+  }
+  .btn:active{transform:translateY(1px)}
+
+  /* Сцена игры */
+  .stage-wrap{position:relative; width:100%; max-width:1000px; margin:70px auto 18px; aspect-ratio: 16 / 10;}
+  .stage{
+    position:relative; width:100%; height:100%; overflow:hidden; border-radius:16px;
+    background:#121316 url("") center/cover no-repeat; box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  .layer{position:absolute; inset:0}
+  .sprite{
+    position:absolute; display:block; width:auto; height:auto; transform-origin:center center;
+    will-change:transform, opacity; cursor:pointer; user-select:none;
+    transition:filter .15s ease, transform .08s ease;
+  }
+  .sprite:hover{filter:brightness(1.04)}
+  .sprite.ghost{animation:float 2.5s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+
+  /* Панель уровня / низ экрана */
+  .dock{
+    display:flex; gap:10px; align-items:center; justify-content:space-between;
+    max-width:1000px; margin:0 auto; padding:10px 4px 18px;
+  }
+  .pill{
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+    border-radius:14px; padding:10px 14px; color:#d7d9dd;
+  }
+
+  /* Модалка задания */
+  .modal{
+    position:fixed; inset:0; display:none; place-items:center; padding:20px; z-index:10;
+    background:rgba(0,0,0,.35);
+  }
+  .card{
+    width:min(680px, 92vw); background:var(--panel); color:#e9eaec; border-radius:16px;
+    padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.06);
+  }
+  .card h3{margin:4px 0 8px; font-size:20px}
+  .card p{margin:8px 0 0; color:#cfd1d6}
+  .card footer{display:flex; gap:10px; justify-content:flex-end; margin-top:14px}
+  .hint{padding:8px 12px; border-radius:10px; border:1px dashed rgba(255,255,255,.25); color:#b9bcc2}
+  .toast{
+    position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    background:var(--glass); color:#fff; padding:10px 14px; border-radius:12px; display:none;
+  }
+
+  /* Прелоадер */
+  .loader{position:absolute; inset:0; display:grid; place-items:center; background:rgba(0,0,0,.35); z-index:4}
+  .ring{width:42px; height:42px; border-radius:50%; border:4px solid rgba(255,255,255,.25); border-top-color:var(--brand); animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Адаптив */
+  @media (max-width:540px){
+    .hud{height:auto; padding:8px 10px; gap:8px; flex-wrap:wrap}
+    .badge{font-size:14px}
+    .pill{font-size:14px}
+    .btn{padding:9px 12px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hud" aria-live="polite">
+  <div class="badge">Уровень: <span id="levelLabel" class="brand">1/4</span></div>
+  <div class="progress" aria-label="Прогресс">
+    <div id="progressBar" class="bar"></div>
+  </div>
+  <button id="hintBtn" class="btn" type="button">Подсказка</button>
+</header>
+
+<main class="stage-wrap">
+  <div id="stage" class="stage" role="application" aria-label="Игровая сцена">
+    <div id="bg" class="layer" aria-hidden="true"></div>
+    <div id="actors" class="layer" aria-label="Элементы уровня"></div>
+    <div id="loader" class="loader" hidden><div class="ring" role="progressbar" aria-label="Загрузка…"></div></div>
+  </div>
+  <div class="dock">
+    <div id="levelTask" class="pill">Найди Шагуню на картинке</div>
+    <div class="pill">Очки: <span id="score">0</span></div>
+  </div>
+</main>
+
+<!-- Модалка задания/истории -->
+<section id="modal" class="modal" aria-hidden="true">
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h3 id="mTitle">Нашла Шагуню!</h3>
+    <p id="mStory"></p>
+    <p id="mQuest" class="hint"></p>
+    <footer>
+      <button type="button" class="btn" id="doneBtn">Задание выполнено</button>
+    </footer>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ======================= НАСТРОЙКИ ИГРЫ ======================= */
+/* Впишите свои пути к изображениям. Можно использовать относительные URL. */
+const GAME_CONFIG = {
+  assets: {
+    bg1: 'assets/bg_camp_day.png',       // фон для уровня 1 (иллюстрация лагеря днём)
+    bg2: 'assets/bg_camp_route.png',     // фон для уровня 2 (дорожка/флаги)
+    bg3: 'assets/bg_cabins_evening.png', // фон для уровня 3 (домики вечером)
+    bg4: 'assets/bg_camp_night.png',     // фон для уровня 4 (ночная поляна)
+    ghost: 'assets/ghost_main.png',      // ваш Шагуня (прозрачный PNG)
+    // «обманки» (похожие по форме и цвету объекты)
+    decoys: [
+      'assets/decoy_blanket.png',
+      'assets/decoy_towel.png',
+      'assets/decoy_mug_steam.png',
+      'assets/decoy_light_blob.png',
+      'assets/decoy_socks.png',
+      'assets/decoy_steam_cloud.png'
+    ]
+  },
+
+  /* Описание уровней.
+     x/y/scale — в ПРОЦЕНТАХ от сцены (удобно для адаптива). */
+  levels: [
+    {
+      bg: 'bg1',
+      story: 'Доброе утро в лагере! Осень шуршит, чайник шумит, а Шагуня где-то рядом.',
+      quest: 'Пройди 300 шагов или сделай зарядку 2 минуты.',
+      hint: 'Шагуня любит бывать рядом с тёплыми вещами.',
+      ghost: { x: 62, y: 62, w: 10 },  // ширина в % (высота посчитается пропорционально)
+      decoys: [
+        { x: 18, y: 64, w: 9, img: 0 },
+        { x: 72, y: 28, w: 8, img: 2 },
+        { x: 40, y: 70, w: 10, img: 4 }
+      ]
+    },
+    {
+      bg: 'bg2',
+      story: 'Слышишь хруст листьев? Это марш-парад осени.',
+      quest: 'Шагай 1 минуту под музыку или 500 шагов за день.',
+      hint: 'Ищи светлое пятнышко между флажками.',
+      ghost: { x: 35, y: 38, w: 9 },
+      decoys: [
+        { x: 12, y: 52, w: 8, img: 1 },
+        { x: 60, y: 18, w: 7, img: 3 }
+      ]
+    },
+    {
+      bg: 'bg3',
+      story: 'Тихий час. Перед сном — немного дыхания и растяжки.',
+      quest: 'Вдох на 4 шага, выдох на 4 — повтори 6 раз.',
+      hint: 'Посмотри там, где в окне мягкий свет.',
+      ghost: { x: 77, y: 46, w: 8 },
+      decoys: [
+        { x: 22, y: 58, w: 9, img: 5 },
+        { x: 58, y: 72, w: 8, img: 0 }
+      ]
+    },
+    {
+      bg: 'bg4',
+      story: 'Вечер у костра. Когда находишь тепло — загорается весь лагерь.',
+      quest: 'Заверши день 1000 шагами. Маленькими, но уверенными.',
+      hint: 'Где-то рядом с огоньком.',
+      ghost: { x: 50, y: 40, w: 9 },
+      decoys: [
+        { x: 20, y: 42, w: 8, img: 2 },
+        { x: 66, y: 68, w: 9, img: 1 },
+        { x: 30, y: 22, w: 7, img: 3 }
+      ]
+    }
+  ]
+};
+/* ============================================================= */
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage');
+const bgLayer = $('#bg');
+const actors = $('#actors');
+const modal = $('#modal');
+const mStory = $('#mStory');
+const mQuest = $('#mQuest');
+const levelTask = $('#levelTask');
+const levelLabel = $('#levelLabel');
+const progressBar = $('#progressBar');
+const toast = $('#toast');
+const loader = $('#loader');
+const hintBtn = $('#hintBtn');
+
+let state = { levelIndex: 0, score: 0, preloaded: new Map() };
+
+/* Утилиты */
+function showToast(msg, t=1400){
+  toast.textContent = msg; toast.style.display='block';
+  clearTimeout(showToast.tid);
+  showToast.tid = setTimeout(()=> toast.style.display='none', t);
+}
+function preload(src){
+  if(state.preloaded.has(src)) return state.preloaded.get(src);
+  const img = new Image(); img.src = src;
+  state.preloaded.set(src, img);
+  return img;
+}
+function setBg(url){ bgLayer.style.background = `center/cover no-repeat url('${url}')`; }
+
+function percentPos(el, {x,y,w}){
+  el.style.left = x + '%';
+  el.style.top  = y + '%';
+  el.style.width = w + '%';
+  el.style.transform = 'translate(-50%,-50%)';
+}
+
+/* Рендер уровня */
+function renderLevel(){
+  const L = GAME_CONFIG.levels[state.levelIndex];
+  levelLabel.textContent = `${state.levelIndex+1}/${GAME_CONFIG.levels.length}`;
+  progressBar.style.width = ((state.levelIndex)/GAME_CONFIG.levels.length*100) + '%';
+  levelTask.textContent = 'Найди Шагуню на картинке';
+  actors.innerHTML = '';
+
+  loader.hidden = false;
+
+  const bgUrl = GAME_CONFIG.assets[L.bg];
+  setBg(bgUrl);
+  preload(bgUrl);
+  preload(GAME_CONFIG.assets.ghost);
+  L.decoys.forEach(d => preload(GAME_CONFIG.assets.decoys[d.img]));
+
+  // Добавляем обманки
+  L.decoys.forEach(d => {
+    const el = document.createElement('img');
+    el.className = 'sprite';
+    el.alt = 'объект';
+    el.src = GAME_CONFIG.assets.decoys[d.img];
+    percentPos(el, d);
+    el.addEventListener('click', () => showToast('Это не Шагуня 😊'));
+    actors.appendChild(el);
+  });
+
+  // Добавляем Шагуню
+  const ghost = document.createElement('img');
+  ghost.className = 'sprite ghost';
+  ghost.alt = 'Шагуня';
+  ghost.src = GAME_CONFIG.assets.ghost;
+  percentPos(ghost, L.ghost);
+  ghost.addEventListener('click', onFoundGhost);
+  actors.appendChild(ghost);
+
+  // Небольшая задержка, чтобы не мигало
+  setTimeout(()=> loader.hidden = true, 200);
+}
+
+function onFoundGhost(){
+  const L = GAME_CONFIG.levels[state.levelIndex];
+  mStory.textContent = L.story;
+  mQuest.textContent = 'Задание: ' + L.quest;
+  modal.style.display = 'grid';
+  modal.setAttribute('aria-hidden', 'false');
+  state.score += 100;
+  $('#score').textContent = state.score.toString();
+}
+
+$('#doneBtn').addEventListener('click', ()=>{
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden', 'true');
+
+  // Переход на следующий уровень
+  const last = (state.levelIndex >= GAME_CONFIG.levels.length - 1);
+  if(last){
+    progressBar.style.width = '100%';
+    showToast('🏆 Игра пройдена! Лагерь ожил.'); 
+    levelTask.textContent = 'Молодец! Ты нашла Шагуню во всех локациях.';
+  } else {
+    state.levelIndex++;
+    renderLevel();
+  }
+});
+
+hintBtn.addEventListener('click', ()=>{
+  const hint = GAME_CONFIG.levels[state.levelIndex].hint || 'Присмотрись внимательнее к светлым пятнам.';
+  showToast('Подсказка: ' + hint, 2000);
+});
+
+/* Старт */
+(function init(){
+  // Предзагрузка всего, чтобы не было «подгрузок» на мобильном
+  const A = GAME_CONFIG.assets;
+  Object.values(A).flat().forEach(v=>{
+    if(typeof v === 'string') preload(v);
+  });
+  renderLevel();
+})();
+</script>
+</body>
+</html>
