@@ -9,20 +9,40 @@
   html,body{height:100%}
   body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-  /* ======= Интро ======= */
-  .intro-wrap{max-width:1200px; margin:20px auto 10px; padding:0 12px}
-  .intro{position:relative; overflow:hidden; border-radius:20px; height:min(70vh, 680px);
-         box-shadow:0 18px 48px var(--shadow); border:1px solid rgba(0,0,0,.06); background:#fafafa}
+  /* ГЛОБАЛЬНОЕ скрытие до старта */
+  body.prestart #hud,
+  body.prestart #gameWrap { display:none !important; }
+  body.started #introWrap { display:none !important; }
+
+  /* ======= Интро (центрированное) ======= */
+  .intro-wrap{max-width:1280px; margin:18px auto; padding:0 14px}
+  .intro{
+    position:relative; display:grid; place-items:center;
+    overflow:hidden; border-radius:24px;
+    height:min(86vh, 760px); background:#f4f5f7;
+    box-shadow:0 22px 54px rgba(0,0,0,.10); border:1px solid rgba(0,0,0,.06)
+  }
   .intro figure{position:absolute; inset:0; margin:0}
-  .intro img{width:100%; height:100%; object-fit:cover; display:block; filter:brightness(.85); opacity:0; transition:opacity .3s ease}
+  .intro img{width:100%; height:100%; object-fit:cover; display:block; filter:brightness(.85) saturate(1.02); opacity:0; transition:opacity .35s ease}
   .intro img.ready{opacity:1}
-  .intro .veil{position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45))}
-  .intro .panel{position:relative; z-index:1; max-width:820px; margin:14px; background:rgba(255,255,255,.9); color:#202226;
-    border:1px solid rgba(0,0,0,.06); border-radius:16px; padding:18px; backdrop-filter:blur(4px)}
-  .intro h1{margin:0 0 10px;font-size:22px}
-  .intro blockquote{margin:12px 0; padding:12px; background:#fff; border-left:4px solid var(--brand); border-radius:8px}
-  .btn{cursor:pointer; border:0; border-radius:12px; background:var(--brand); color:#fff; font-weight:700; padding:10px 14px;
-       box-shadow:0 6px 18px rgba(226,74,39,.25)}
+  .intro::after{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(80% 70% at 50% 50%, rgba(0,0,0,.10) 0%, rgba(0,0,0,.35) 100%),
+      linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.45));
+    pointer-events:none;
+  }
+  .intro .panel{
+    position:relative; z-index:1; width:min(780px,92vw);
+    background:rgba(255,255,255,.94); color:#202226;
+    border:1px solid rgba(0,0,0,.06); border-radius:20px;
+    padding:22px 22px 18px; box-shadow:0 20px 50px rgba(0,0,0,.12); backdrop-filter:blur(6px)
+  }
+  .intro h1{margin:0 0 8px; letter-spacing:.2px; font-size:clamp(22px,2.4vw + 12px,30px); line-height:1.15}
+  .intro p{margin:10px 0 0}
+  .intro blockquote{margin:14px 0; padding:14px 16px; background:#fff; border-radius:14px; border:1px solid rgba(0,0,0,.06); position:relative}
+  .intro blockquote::before{content:"“"; position:absolute; left:10px; top:-12px; font-size:36px; color:var(--brand); opacity:.8; line-height:1}
+  .btn{cursor:pointer; border:0; border-radius:12px; background:var(--brand); color:#fff; font-weight:700; padding:11px 16px; box-shadow:0 6px 18px rgba(226,74,39,.25)}
 
   /* ======= HUD ======= */
   .hud{position:sticky; top:0; display:flex; gap:10px; align-items:center; padding:10px 14px;
@@ -34,7 +54,7 @@
   .pill{background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:14px; padding:10px 14px; color:#444}
 
   /* ======= Игра + правый блок ======= */
-  .play-wrap{max-width:1200px; margin:10px auto 24px; padding:0 12px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
+  .play-wrap{max-width:1200px; margin:10px auto 24px; padding:0 14px; display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap}
   .stage-wrap{position:relative; flex:1 1 680px; min-width:320px; aspect-ratio:16/10}
   .stage{position:relative; width:100%; height:100%; overflow:hidden; border-radius:16px; background:#ddd center/cover no-repeat;
          box-shadow:0 12px 36px var(--shadow); border:1px solid rgba(0,0,0,.06)}
@@ -65,33 +85,34 @@
   .coords{position:fixed; top:64px; left:50%; transform:translateX(-50%); background:#111; color:#fff; padding:6px 10px; border-radius:10px; display:none; z-index:9}
 </style>
 </head>
-<body>
+<!-- КЛЮЧЕВОЕ: стартуем с классом prestart -->
+<body class="prestart">
 
-<!-- ===== Интро (видно при загрузке) ===== -->
+<!-- ===== Интро ===== -->
 <div class="intro-wrap" id="introWrap">
-  <section id="intro" class="intro">
+  <section id="intro" class="intro" aria-label="Вводный экран">
     <figure><img id="introImg" alt="Осенний лес"></figure>
-    <div class="veil" aria-hidden="true"></div>
-    <div class="panel">
+    <div class="panel" role="region" aria-describedby="introText">
       <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
-      <p>В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
+      <p id="introText">В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
       <blockquote>
         «Привет! Я живу здесь с прошлого сезона. Я люблю чай с облепихой, осенние листья и шаги по утренней росе. А ещё я немножко… прозрачный.»
       </blockquote>
       <p>Так все узнали про Привидение Осеннего Лагеря — Шагуню. Он не пугает, а помогает двигаться, греться и не грустить. Игра начинается: за неделю нужно найти Шагуню на всех локациях лагеря и выполнить его задания.</p>
-      <footer><button id="startBtn" class="btn" type="button">Начать игру</button></footer>
+      <footer style="margin-top:12px"><button id="startBtn" class="btn" type="button">Начать игру</button></footer>
     </div>
   </section>
 </div>
 
-<!-- ===== HUD и игра (скрыты до старта!) ===== -->
-<header class="hud" id="hud" hidden aria-live="polite">
+<!-- ===== HUD ===== -->
+<header class="hud" id="hud" aria-live="polite">
   <div class="badge">Уровень: <span id="levelLabel" class="brand">1/1</span></div>
   <div class="progress"><div id="progressBar" class="bar"></div></div>
   <button id="hintBtn" class="btn" type="button">Подсказка</button>
 </header>
 
-<section class="play-wrap" id="gameWrap" hidden>
+<!-- ===== Игра ===== -->
+<section class="play-wrap" id="gameWrap">
   <div class="stage-wrap">
     <div id="stage" class="stage" role="application" aria-label="Игровая сцена">
       <div id="bg" class="layer"></div>
@@ -144,41 +165,39 @@ const GAME_CONFIG = {
   levels: [{
     bg: ASSETS.lvl1,
     bgFound: ASSETS.lvl1found,
-    hotspot: { x: 95, y: 43, w: 6, h: 18 }, // ближе к правой стене
+    hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 }, // из твоих координат
     hint: ''
   }]
 };
 
 const $ = s => document.querySelector(s);
-const introImg = $('#introImg'), introWrap = $('#introWrap'), startBtn = $('#startBtn');
+const introImg = $('#introImg'), startBtn = $('#startBtn');
 const hud = $('#hud'), gameWrap = $('#gameWrap');
 const stage = $('#stage'), bgLayer = $('#bg'), loader = $('#loader'), celebrate = $('#celebrate'), errLayer = $('#err');
 const sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'), levelLabel = $('#levelLabel'), progressBar = $('#progressBar'), levelTask = $('#levelTask'), nextBtn = $('#nextBtn'), reportBtn = $('#reportBtn');
-const toast = $('#toast'), coordsBox = $('#coords');
-const reportModal = $('#reportModal'), cancelReport = $('#cancelReport'), submitReport = $('#submitReport');
+const toast = $('#toast');
 
-let state = { levelIndex: 0, started:false, score:0, DEV:false, GRAB:false };
+let state = { levelIndex: 0, score:0, GRAB:false };
 
+/* утилиты */
 function preload(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(src); im.onerror=()=>rej(src); im.src=src; }); }
 function setBg(url){ bgLayer.style.opacity='0'; setTimeout(()=>{ bgLayer.style.background=`center/cover no-repeat url('${url}')`; bgLayer.style.opacity='1'; },80); }
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
 function clickToPercent(e){ const r=stage.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100}; }
 function pointInRect(pt,r){ const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2; return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B; }
 
-/* Интро-фото */
+/* фоновое фото интро */
 preload(ASSETS.start).then(src=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); }).catch(()=>{ introImg.remove(); });
 
-/* Старт: только после клика показываем HUD и игру */
+/* старт игры — убираем класс prestart, ставим started */
 startBtn.addEventListener('click', async ()=>{
-  introWrap.style.display='none';
-  hud.hidden = false;
-  gameWrap.hidden = false;
+  document.body.classList.remove('prestart');
+  document.body.classList.add('started');
   await startLevel(0);
 });
 
-/* Уровень */
+/* запуск уровня */
 async function startLevel(i){
-  state.levelIndex = i;
   sidePanel.style.display='none';
   hintBtn.style.display = (i===0)?'none':'inline-flex';
   levelLabel.textContent = `${i+1}/${GAME_CONFIG.levels.length}`;
@@ -188,42 +207,43 @@ async function startLevel(i){
 
   loader.hidden=false; errLayer.style.display='none';
   const L = GAME_CONFIG.levels[i];
-  const safety = setTimeout(()=> loader.hidden=true, 2000);
+  const safety = setTimeout(()=> loader.hidden=true, 2500);
 
   try{
-    const src = await preload(L.bg);   // <-- ждём загрузку lvl1.jpg
-    setBg(src);
-    if(L.bgFound) preload(L.bgFound);  // подгружаем картинку «после клика»
+    const src = await preload(L.bg); setBg(src);
+    if(L.bgFound) preload(L.bgFound);
   }catch(src){
-    errLayer.style.display='grid';
-    errLayer.textContent = 'Не удалось загрузить: ' + src;
+    errLayer.style.display='grid'; errLayer.textContent = 'Не удалось загрузить: ' + src;
   }finally{
     clearTimeout(safety); loader.hidden=true;
   }
 
   stage.onclick = (ev)=>{
     const pt = clickToPercent(ev);
-    if (state.GRAB){ coordsBox.textContent=`x:${pt.x.toFixed(1)} y:${pt.y.toFixed(1)}`; coordsBox.style.display='block'; return; }
-    if (L.hotspot && pointInRect(pt, L.hotspot)){ onFound(L); }
-    else { stage.animate([{transform:'scale(1)'},{transform:'scale(1.01)'},{transform:'scale(1)'}], {duration:140}); showToast('Не здесь 😊 Попробуй ещё!'); }
+    if (L.hotspot && pointInRect(pt, L.hotspot)) onFound(L);
+    else showToast('Не здесь 😊 Попробуй ещё!');
   };
 }
 
-/* После находки */
+/* найдено */
 function onFound(L){
   stage.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}], {duration:320, easing:'ease'});
   if(L.bgFound) setBg(L.bgFound);
   sidePanel.style.display='block';
-  state.score += 100; $('#score').textContent = state.score;
+  state.score += 100; document.getElementById('score').textContent = state.score;
 }
 
-/* Отчётность */
+/* отчётность */
+const reportModal = document.getElementById('reportModal'),
+      cancelReport = document.getElementById('cancelReport'),
+      submitReport = document.getElementById('submitReport');
+
 reportBtn.addEventListener('click', ()=>{ reportModal.style.display='grid'; reportModal.setAttribute('aria-hidden','false'); });
 cancelReport.addEventListener('click', ()=>{ reportModal.style.display='none'; reportModal.setAttribute('aria-hidden','true'); });
 submitReport.addEventListener('click', ()=>{
   const done = document.querySelector('input[name="task"]:checked');
   if(!done){ showToast('Выбери вариант выполнения 🙂'); return; }
-  localStorage.setItem('level_done_'+state.levelIndex, '1');
+  localStorage.setItem('level_done_0','1');
   reportModal.style.display='none'; reportModal.setAttribute('aria-hidden','true');
   celebrate.style.display='grid';
   celebrate.firstElementChild.style.animation='none'; void celebrate.firstElementChild.offsetWidth; celebrate.firstElementChild.style.animation='';
@@ -231,28 +251,8 @@ submitReport.addEventListener('click', ()=>{
   nextBtn.disabled = false;
   showToast('Отлично! Уровень засчитан ✅', 1800);
 });
-nextBtn.addEventListener('click', ()=>{
-  showToast('Все уровни пройдены! 🎉', 2000);
-});
-
+nextBtn.addEventListener('click', ()=>{ showToast('Все уровни пройдены! 🎉', 2000); });
 function isLevelDone(i){ return localStorage.getItem('level_done_'+i)==='1'; }
-
-/* Dev: D — хитбокс, G — координаты */
-document.addEventListener('keydown', (e)=>{
-  const L = GAME_CONFIG.levels[state.levelIndex];
-  if(e.key.toLowerCase()==='d'){
-    document.querySelectorAll('.devbox').forEach(n=>n.remove());
-    if(L.hotspot){
-      const el=document.createElement('div');
-      el.className='devbox';
-      Object.assign(el.style,{position:'absolute',
-        left:`${L.hotspot.x - L.hotspot.w/2}%`, top:`${L.hotspot.y - L.hotspot.h/2}%`,
-        width:`${L.hotspot.w}%`, height:`${L.hotspot.h}%`, pointerEvents:'none'});
-      stage.appendChild(el);
-    }
-  }
-  if(e.key.toLowerCase()==='g'){ state.GRAB = !state.GRAB; coordsBox.style.display = state.GRAB?'block':'none'; }
-});
 </script>
 </body>
 </html>
