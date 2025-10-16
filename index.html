@@ -12,8 +12,6 @@
   --panel:#f6f7f8;
   --shadow:rgba(0,0,0,.10);
 }
-
-/* --- общий сброс и шрифт --- */
 html,body{height:100%}
 body{
   margin:0;
@@ -33,11 +31,16 @@ body.started #introWrap {display:none !important;}
 .intro{
   position:relative;display:grid;place-items:center;
   overflow:hidden;border-radius:24px;
-  height:min(86vh,760px);background:#f4f5f7;
-  box-shadow:0 22px 54px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)
+  min-height:68vh;max-height:92vh;background:#f4f5f7;
+  box-shadow:0 22px 54px rgba(0,0,0,.10);
+  border:1px solid rgba(0,0,0,.06)
 }
 .intro figure{position:absolute;inset:0;margin:0}
-.intro img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.85) saturate(1.02);opacity:0;transition:opacity .35s ease}
+.intro img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  filter:brightness(.85) saturate(1.02);
+  opacity:0;transition:opacity .35s ease;
+}
 .intro img.ready{opacity:1}
 .intro::after{
   content:"";position:absolute;inset:0;
@@ -48,15 +51,38 @@ body.started #introWrap {display:none !important;}
 }
 .intro .panel{
   position:relative;z-index:1;width:min(780px,92vw);
-  background:rgba(255,255,255,.94);color:#202226;
-  border:1px solid rgba(0,0,0,.06);border-radius:20px;
-  padding:22px 22px 18px;box-shadow:0 20px 50px rgba(0,0,0,.12);backdrop-filter:blur(6px)
+  background:rgba(255,255,255,.88);
+  color:#202226;border:1px solid rgba(0,0,0,.06);
+  border-radius:20px;padding:20px 20px 16px;
+  box-shadow:0 20px 50px rgba(0,0,0,.12);
+  backdrop-filter:blur(6px)
 }
-.intro h1{margin:0 0 8px;letter-spacing:.2px;font-size:clamp(22px,2.4vw + 12px,30px);line-height:1.15}
+.intro h1{
+  margin:0 0 8px;letter-spacing:.2px;
+  font-size:clamp(22px,2.2vw + 12px,30px);
+  line-height:1.15
+}
 .intro p{margin:10px 0 0}
-.intro blockquote{margin:14px 0;padding:14px 16px;background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.06);position:relative}
-.intro blockquote::before{content:"“";position:absolute;left:10px;top:-12px;font-size:36px;color:var(--brand);opacity:.8;line-height:1}
+.intro blockquote{
+  margin:12px 0;padding:12px 14px;background:#fff;
+  border-radius:14px;border:1px solid rgba(0,0,0,.06);
+  position:relative
+}
+.intro blockquote::before{
+  content:"“";position:absolute;left:10px;top:-12px;
+  font-size:34px;color:var(--brand);opacity:.8;line-height:1
+}
 .btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:11px 16px;box-shadow:0 6px 18px rgba(226,74,39,.25)}
+
+@media (max-width:560px){
+  .intro{min-height:72vh;max-height:92vh;}
+  .intro .panel{width:calc(100% - 22px);padding:16px 14px 14px;}
+  .intro h1{font-size:clamp(20px,5.2vw,24px);}
+  .intro blockquote{padding:10px 12px;}
+}
+@media (max-height:560px){
+  .intro .panel{max-height:72vh;overflow:auto;}
+}
 
 /* ======= HUD ======= */
 .hud{position:sticky;top:0;display:flex;gap:10px;align-items:center;padding:10px 14px;
@@ -96,8 +122,6 @@ padding:16px;box-shadow:0 10px 24px var(--shadow);display:none}
 .celebrate{position:absolute;inset:0;display:none;place-items:center;pointer-events:none}
 .heart{font-size:64px;opacity:0;transform:scale(.7);animation:pop 1.2s ease forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.7) translateY(20px)}50%{opacity:1;transform:scale(1) translateY(-4px)}100%{opacity:0;transform:scale(1.15) translateY(-24px)}}
-
-.coords{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:6px 10px;border-radius:10px;display:none;z-index:9}
 </style>
 </head>
 <body class="prestart">
@@ -170,42 +194,27 @@ padding:16px;box-shadow:0 10px 24px var(--shadow);display:none}
 <div id="toast" class="toast"></div>
 
 <script>
-/* === пути === */
-const ASSETS = { start:'start.jpg', lvl1:'lvl1.jpg', lvl1found:'lvl1found.jpg' };
+const ASSETS={start:'start.jpg',lvl1:'lvl1.jpg',lvl1found:'lvl1found.jpg'};
+const GAME_CONFIG={levels:[{bg:ASSETS.lvl1,bgFound:ASSETS.lvl1found,hotspot:{x:97.25,y:53.8,w:3.4,h:11.5},hint:''}]};
 
-/* === уровни === */
-const GAME_CONFIG = {
-  levels: [{
-    bg: ASSETS.lvl1,
-    bgFound: ASSETS.lvl1found,
-    hotspot: { x:97.25, y:53.8, w:3.4, h:11.5 },
-    hint: ''
-  }]
-};
+const $=s=>document.querySelector(s);
+const introImg=$('#introImg'),startBtn=$('#startBtn'),stage=$('#stage'),bgLayer=$('#bg'),
+      loader=$('#loader'),errLayer=$('#err'),sidePanel=$('#sidePanel'),
+      levelLabel=$('#levelLabel'),progressBar=$('#progressBar'),
+      scoreEl=$('#score'),toast=$('#toast'),
+      nextBtn=$('#nextBtn'),reportBtn=$('#reportBtn'),celebrate=$('#celebrate');
 
-const $ = s => document.querySelector(s);
-const introImg=$('#introImg'), startBtn=$('#startBtn'),
-      stage=$('#stage'), bgLayer=$('#bg'), loader=$('#loader'),
-      errLayer=$('#err'), sidePanel=$('#sidePanel'),
-      levelLabel=$('#levelLabel'), progressBar=$('#progressBar'),
-      scoreEl=$('#score'), toast=$('#toast'),
-      nextBtn=$('#nextBtn'), reportBtn=$('#reportBtn'),
-      celebrate=$('#celebrate');
+let state={score:0,found:false};
 
-let state={score:0};
-
-/* утилиты */
 function preload(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(src);i.onerror=()=>rej(src);i.src=src;});}
 function setBg(url){bgLayer.style.opacity='0';setTimeout(()=>{bgLayer.style.background=`center/cover no-repeat url('${url}')`;bgLayer.style.opacity='1';},80);}
 function showToast(msg,t=1600){toast.textContent=msg;toast.style.display='block';clearTimeout(showToast.tid);showToast.tid=setTimeout(()=>toast.style.display='none',t);}
 function clickToPercent(e){const r=stage.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}
 function pointInRect(pt,r){const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2;return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B;}
-
-/* лоадер */
 function showLoader(){loader.hidden=false;loader.style.display='grid';}
 function hideLoader(){loader.hidden=true;loader.style.display='none';}
 
-/* интро */
+/* === Интро === */
 preload(ASSETS.start).then(src=>{introImg.src=src;introImg.onload=()=>introImg.classList.add('ready');}).catch(()=>introImg.remove());
 startBtn.addEventListener('click',async()=>{
   document.body.classList.remove('prestart');
@@ -213,8 +222,9 @@ startBtn.addEventListener('click',async()=>{
   await startLevel(0);
 });
 
-/* запуск уровня */
+/* === Уровень === */
 async function startLevel(i){
+  state.found=false;
   sidePanel.style.display='none';
   showLoader();errLayer.style.display='none';
   const L=GAME_CONFIG.levels[i];
@@ -227,21 +237,23 @@ async function startLevel(i){
     errLayer.textContent='Не удалось загрузить '+e;
   }finally{hideLoader();}
   stage.onclick=e=>{
+    if(state.found) return; // отключаем клики после нахождения
     const pt=clickToPercent(e);
-    if(L.hotspot&&pointInRect(pt,L.hotspot))onFound(L);
+    if(L.hotspot&&pointInRect(pt,L.hotspot)) onFound(L);
     else showToast('Не здесь 😊 Попробуй ещё!');
   };
 }
 
-/* найдено */
+/* === Найдено === */
 function onFound(L){
+  state.found=true;
   stage.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:320,easing:'ease'});
   if(L.bgFound){showLoader();setBg(L.bgFound);setTimeout(hideLoader,300);}
   sidePanel.style.display='block';
   state.score+=100;scoreEl.textContent=state.score;
 }
 
-/* отчётность */
+/* === Отчётность === */
 const reportModal=$('#reportModal'),cancelReport=$('#cancelReport'),submitReport=$('#submitReport');
 reportBtn.onclick=()=>{reportModal.style.display='grid';};
 cancelReport.onclick=()=>{reportModal.style.display='none';};
