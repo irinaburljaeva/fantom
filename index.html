@@ -17,22 +17,27 @@ body{margin:0;background:var(--page);color:var(--text);
 body.prestart #hud, body.prestart #gameWrap{display:none!important}
 body.started  #introWrap{display:none!important}
 
-/* ===== интро ===== */
+/* ===== интро (деликатное и компактное) ===== */
 .intro-wrap{max-width:1280px;margin:16px auto;padding:0 12px}
-.intro{position:relative;display:grid;place-items:center;overflow:hidden;border-radius:20px;
-  background:#f4f5f7;min-height:66vh;max-height:92vh;
-  box-shadow:0 20px 50px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)}
+.intro{
+  position:relative;display:grid;place-items:center;overflow:hidden;border-radius:20px;
+  background:#f4f5f7;min-height:58vh;max-height:84vh;
+  box-shadow:0 20px 50px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)
+}
 .intro figure{position:absolute;inset:0;margin:0}
 .intro img{width:100%;height:100%;object-fit:cover;display:block;
   filter:brightness(.86) saturate(1.02);opacity:0;transition:opacity .35s}
 .intro img.ready{opacity:1}
 .intro::after{content:"";position:absolute;inset:0;pointer-events:none;background:
-  radial-gradient(80% 70% at 50% 50%, rgba(0,0,0,.10) 0%, rgba(0,0,0,.34) 100%),
-  linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.38))}
-.intro .panel{position:relative;z-index:1;width:min(760px,92vw);
-  background:rgba(255,255,255,.86);color:#202226;border:1px solid rgba(0,0,0,.06);
-  border-radius:16px;padding:18px 18px 14px;box-shadow:0 18px 42px rgba(0,0,0,.12);
-  backdrop-filter:blur(6px)}
+  radial-gradient(80% 70% at 50% 50%, rgba(0,0,0,.08) 0%, rgba(0,0,0,.30) 100%),
+  linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.28))}
+.intro .panel{
+  position:relative;z-index:1;width:min(760px,92vw);
+  background:rgba(255,255,255,.80); /* чуть прозрачная карточка */
+  color:#202226;border:1px solid rgba(0,0,0,.06);
+  border-radius:16px;padding:16px 16px 12px;
+  box-shadow:0 18px 42px rgba(0,0,0,.10);backdrop-filter:blur(6px)
+}
 .intro h1{margin:0 0 8px;letter-spacing:.2px;
   font-size:clamp(21px,2vw + 12px,28px);line-height:1.15}
 .intro p{margin:8px 0 0}
@@ -44,16 +49,15 @@ body.started  #introWrap{display:none!important}
   font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25)}
 
 @media (max-width:560px){
-  .intro{border-radius:16px;min-height:70vh;max-height:92vh}
+  .intro{border-radius:16px;min-height:56vh;max-height:80vh}
   .intro .panel{width:calc(100% - 20px);padding:14px 12px 12px;border-radius:14px;
-    max-height:66vh;overflow:auto;-webkit-overflow-scrolling:touch}
+    max-height:62vh;overflow:auto;-webkit-overflow-scrolling:touch}
   .intro .panel::-webkit-scrollbar{width:0;height:0}
   .intro h1{font-size:clamp(19px,5vw,22px);margin-bottom:6px}
   .intro p{font-size:15px}
   .intro blockquote{font-size:15px;padding:9px 10px}
   .intro blockquote::before{font-size:26px;left:8px;top:-10px}
 }
-@media (max-height:560px){ .intro .panel{max-height:70vh} }
 
 /* ===== HUD ===== */
 .hud{position:sticky;top:0;display:flex;gap:10px;align-items:center;padding:10px 14px;
@@ -86,13 +90,9 @@ body.started  #introWrap{display:none!important}
   border-radius:10px;padding:10px 12px}
 .side .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 
-/* полноэкранная версия панели на мобилках */
+/* мобильная раскладка: панель идёт ПОД картинкой и на всю ширину */
 @media (max-width:720px){
-  .side.mobile-full{
-    position:fixed; left:0; right:0; top:56px; bottom:0; /* под HUD */
-    width:100%; height:auto; overflow:auto; z-index:8;
-    border-radius:16px 16px 0 0; background:var(--panel);
-  }
+  .side{flex:1 1 100%}
 }
 
 /* ===== вспомогательное ===== */
@@ -136,7 +136,7 @@ body.started  #introWrap{display:none!important}
 <header class="hud" id="hud">
   <div class="badge">Уровень: <span id="levelLabel" class="brand">1/1</span></div>
   <div class="progress"><div id="progressBar" class="bar"></div></div>
-  <button id="hintBtn" class="btn" type="button">Подсказка</button>
+  <button id="hintBtn" class="btn" type="button" hidden>Подсказка</button>
 </header>
 
 <!-- ===== Игра ===== -->
@@ -184,7 +184,7 @@ body.started  #introWrap{display:none!important}
 <div id="toast" class="toast"></div>
 
 <script>
-/* Пути */
+/* Пути к изображениям */
 const ASSETS={start:'start.jpg',lvl1:'lvl1.jpg',lvl1found:'lvl1found.jpg'};
 
 /* Конфиг уровня */
@@ -193,100 +193,71 @@ const GAME_CONFIG={
     bg:ASSETS.lvl1,
     bgPos:'center center',
     bgFound:ASSETS.lvl1found,
-    bgFoundPos:'center 60%',     // опустить чуть ниже — Шагуня ближе к центру
+    bgFoundPos:'center 60%',       // Шагуня ближе к центру
     hotspot:{x:97.25,y:53.8,w:3.4,h:11.5},
-    hint:''
+    hint:null                      // НЕТ подсказки → кнопка не показывается
   }]
 };
 
+/* DOM */
 const $=s=>document.querySelector(s);
-const introImg=$('#introImg'),
-      startBtn=$('#startBtn'),
-      stage=$('#stage'),
-      bgLayer=$('#bg'),
-      loader=$('#loader'),
-      errLayer=$('#err'),
-      sidePanel=$('#sidePanel'),
-      hintBtn=$('#hintBtn'),
-      scoreEl=$('#score'),
-      toast=$('#toast'),
-      nextBtn=$('#nextBtn'),
-      reportBtn=$('#reportBtn'),
+const introImg=$('#introImg'), startBtn=$('#startBtn'),
+      stage=$('#stage'), bgLayer=$('#bg'), loader=$('#loader'), errLayer=$('#err'),
+      sidePanel=$('#sidePanel'), hintBtn=$('#hintBtn'),
+      scoreEl=$('#score'), toast=$('#toast'),
+      nextBtn=$('#nextBtn'), reportBtn=$('#reportBtn'),
       celebrate=$('#celebrate');
 
 let state={score:0,found:false};
 
 /* Утилиты */
-function preload(src){
-  return new Promise((res,rej)=>{
-    const i=new Image();
-    i.onload=()=>res(src);
-    i.onerror=()=>rej(src);
-    i.src=src;
-  });
-}
+function preload(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(src);i.onerror=()=>rej(src);i.src=src;});}
 function setBgSmart(url,pos){
-  // аккуратно задаём фон и позицию
   bgLayer.style.opacity='0';
   setTimeout(()=>{
-    bgLayer.style.backgroundImage = `url('${url}')`;
-    bgLayer.style.backgroundRepeat = 'no-repeat';
-    bgLayer.style.backgroundSize   = 'cover';
-    bgLayer.style.backgroundPosition = pos || 'center center';
+    bgLayer.style.backgroundImage=`url('${url}')`;
+    bgLayer.style.backgroundRepeat='no-repeat';
+    bgLayer.style.backgroundSize='cover';
+    bgLayer.style.backgroundPosition=pos||'center center';
     bgLayer.style.opacity='1';
   },80);
 }
-function showToast(msg,t=1600){
-  toast.textContent=msg; toast.style.display='block';
-  clearTimeout(showToast.tid);
-  showToast.tid=setTimeout(()=>toast.style.display='none',t);
-}
-function clickToPercent(e){
-  const r=stage.getBoundingClientRect();
-  return {x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100};
-}
-function pointInRect(pt,r){
-  const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2;
-  return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B;
-}
+function showToast(msg,t=1600){toast.textContent=msg;toast.style.display='block';clearTimeout(showToast.tid);showToast.tid=setTimeout(()=>toast.style.display='none',t);}
+function clickToPercent(e){const r=stage.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}
+function pointInRect(pt,r){const L=r.x-r.w/2,R=r.x+r.w/2,T=r.y-r.h/2,B=r.y+r.h/2;return pt.x>=L&&pt.x<=R&&pt.y>=T&&pt.y<=B;}
 function showLoader(){loader.hidden=false;loader.style.display='grid';}
-function hideLoader(){loader.hidden=true; loader.style.display='none';}
+function hideLoader(){loader.hidden=true;loader.style.display='none';}
 
 /* Интро фон */
-preload(ASSETS.start)
-  .then(src=>{introImg.src=src; introImg.onload=()=>introImg.classList.add('ready');})
-  .catch(()=>introImg.remove());
+preload(ASSETS.start).then(src=>{introImg.src=src;introImg.onload=()=>introImg.classList.add('ready');}).catch(()=>introImg.remove());
 
-/* Старт */
-startBtn.addEventListener('click',()=>{
-  document.body.classList.remove('prestart');
-  document.body.classList.add('started');
-  startLevel(0);
-});
+/* Старт игры */
+startBtn.addEventListener('click',()=>{document.body.classList.remove('prestart');document.body.classList.add('started');startLevel(0);});
 
 /* Запуск уровня */
 async function startLevel(i){
   state.found=false;
   sidePanel.style.display='none';
-  sidePanel.classList.toggle('mobile-full', window.innerWidth<=720);
-  hintBtn.style.display='inline-block';    // вновь показываем подсказку при входе на уровень
-
   showLoader(); errLayer.style.display='none';
+
   const L=GAME_CONFIG.levels[i];
+
+  // Показать/скрыть кнопку подсказки в зависимости от наличия текста
+  if (L.hint && L.hint.trim().length) { hintBtn.hidden=false; hintBtn.onclick=()=>showToast(L.hint,2000); }
+  else { hintBtn.hidden=true; hintBtn.onclick=null; }
 
   try{
     const src=await preload(L.bg);
     setBgSmart(src, L.bgPos||'center center');
     if(L.bgFound) preload(L.bgFound);
   }catch(e){
-    errLayer.style.display='grid';
-    errLayer.textContent='Не удалось загрузить '+e;
+    errLayer.style.display='grid';errLayer.textContent='Не удалось загрузить '+e;
   }finally{ hideLoader(); }
 
-  stage.onclick = (e)=>{
-    if(state.found) return; // после нахождения клики игнорируются
+  stage.onclick=e=>{
+    if(state.found) return; // после нахождения клики не нужны
     const pt=clickToPercent(e);
-    if(L.hotspot && pointInRect(pt, L.hotspot)) onFound(L);
+    if(L.hotspot && pointInRect(pt,L.hotspot)) onFound(L);
     else showToast('Не здесь 😊 Попробуй ещё!');
   };
 }
@@ -295,22 +266,16 @@ async function startLevel(i){
 function onFound(L){
   state.found=true;
 
-  // смена фона
   showLoader();
   setBgSmart(L.bgFound||L.bg, L.bgFoundPos||L.bgPos||'center center');
-  setTimeout(hideLoader, 300);
+  setTimeout(hideLoader,300);
 
-  // скрываем подсказку на экране found
-  hintBtn.style.display='none';
+  hintBtn.hidden=true; // подсказка исчезает на найденном экране
 
-  // показываем панель с заданием (полноэкранную на мобилках)
-  sidePanel.style.display='block';
-  sidePanel.classList.toggle('mobile-full', window.innerWidth<=720);
+  sidePanel.style.display='block'; // на мобиле панель под картинкой (не перекрывает её)
 
-  // очки
   state.score+=100; scoreEl.textContent=state.score;
 
-  // небольшая анимация
   celebrate.style.display='grid';
   const heart=celebrate.firstElementChild;
   heart.style.animation='none'; void heart.offsetWidth; heart.style.animation='';
@@ -318,25 +283,21 @@ function onFound(L){
 }
 
 /* Отчётность */
-const reportModal = document.getElementById('reportModal'),
-      cancelReport = document.getElementById('cancelReport'),
-      submitReport = document.getElementById('submitReport');
+const reportModal=document.getElementById('reportModal'),
+      cancelReport=document.getElementById('cancelReport'),
+      submitReport=document.getElementById('submitReport');
 
-reportBtn.onclick = ()=>{ reportModal.style.display='grid'; };
-cancelReport.onclick = ()=>{ reportModal.style.display='none'; };
-submitReport.onclick = ()=>{
+reportBtn.onclick=()=>{reportModal.style.display='grid';};
+cancelReport.onclick=()=>{reportModal.style.display='none';};
+submitReport.onclick=()=>{
   const done=document.querySelector('input[name="task"]:checked');
-  if(!done){ showToast('Выбери вариант выполнения 🙂'); return; }
+  if(!done){showToast('Выбери вариант выполнения 🙂');return;}
   localStorage.setItem('level_done_0','1');
   reportModal.style.display='none';
   nextBtn.disabled=false;
   showToast('Отлично! Уровень засчитан ✅',1800);
 };
-
-nextBtn.onclick = ()=>{
-  // тут появится переход на 2-й уровень, когда он будет готов
-  showToast('Все уровни пройдены! 🎉',2000);
-};
+nextBtn.onclick=()=>{showToast('Все уровни пройдены! 🎉',2000);}
 </script>
 </body>
 </html>
