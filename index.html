@@ -29,7 +29,6 @@ body.started  #introWrap{display:none!important}
 
 /* кнопки */
 .btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25)}
-/* «выключенная» визуально, но кликабельная — чтобы показать тост */
 .btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;filter:grayscale(.1)}
 
 @media (max-width:560px){
@@ -118,15 +117,17 @@ body.started  #introWrap{display:none!important}
   </div>
 
   <aside id="sidePanel" class="side">
+    <!-- ВАЖНО: контент этого блока для 1 уровня остаётся как в твоём файле -->
     <h3>Доброе утро!</h3>
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
     <div class="hint">
-      <div>🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.</div>
+      <div id="hintText"><!-- обновляем программно -->
+        🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.
+      </div>
       <div style="margin-top:6px;">🕒 Следующий уровень откроется после выполнения задания.</div>
     </div>
     <div class="btns">
       <button class="btn" id="reportBtn" type="button">Отчитаться</button>
-      <!-- ВАЖНО: не disabled; используем aria-disabled -->
       <button class="btn" id="nextBtn" type="button" aria-disabled="true" style="background:#26a269">Следующий уровень</button>
     </div>
   </aside>
@@ -136,8 +137,11 @@ body.started  #introWrap{display:none!important}
 <section id="reportModal" class="modal">
   <div class="card">
     <h4>Отчёт по заданию</h4>
-    <label><input type="radio" name="task" value="steps"> Я прошёл(ла) 300 шагов</label><br/>
-    <label><input type="radio" name="task" value="warmup"> Я сделал(а) зарядку 2 минуты</label>
+    <div id="reportOptions">
+      <!-- Для уровня 1 (как в твоём файле): -->
+      <label><input type="radio" name="task" value="steps300"> Я прошёл(ла) 300 шагов</label><br/>
+      <label><input type="radio" name="task" value="warmup2m"> Я сделал(а) зарядку 2 минуты</label>
+    </div>
     <div class="actions">
       <button class="btn" id="cancelReport" type="button" style="background:#e7eaee;color:#222;box-shadow:none">Отмена</button>
       <button class="btn" id="submitReport" type="button">Готово</button>
@@ -148,20 +152,14 @@ body.started  #introWrap{display:none!important}
 <div id="toast" class="toast"></div>
 
 <script>
-/* ====== АССЕТЫ И КОНФИГ ====== */
+/* === АССЕТЫ (добавлены lvl2/lvl2found) === */
 const ASSETS = {
-  start: 'start.jpg',
-  lvl1: 'lvl1.jpg',
-  lvl1found: 'lvl1found.jpg',
-  /* ▲ NEW: ассеты 2 уровня */
-  lvl2: 'lvl2.jpg',
-  lvl2found: 'lvl2found.jpg'
+  start:'start.jpg',
+  lvl1:'lvl1.jpg',       lvl1found:'lvl1found.jpg',
+  lvl2:'lvl2.jpg',       lvl2found:'lvl2found.jpg'
 };
 
-/* 
-  hotspot = центр + ширина/высота в процентах от области (w/h — полный размер прямоугольника).
-  Чтобы подобрать точку, включите консоль и кликните по изображению с зажатым Shift — координаты выведутся в лог.
-*/
+/* === КОНФИГ УРОВНЕЙ: уровень 1 — без изменений; уровень 2 — по твоим данным === */
 const GAME_CONFIG = {
   levels: [
     {
@@ -170,157 +168,9 @@ const GAME_CONFIG = {
       bgFound: ASSETS.lvl1found,
       bgFoundPos: 'center 60%',
       hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
-      hint: null
-    },
-    /* ▲ NEW: второй уровень (примерный хотспот по центру; подгоните под вашу картинку) */
-    {
-      bg: ASSETS.lvl2,
-      bgPos: 'center center',
-      bgFound: ASSETS.lvl2found,
-      bgFoundPos: 'center center',
-      hotspot: { x: 50, y: 50, w: 8, h: 12 }, // ← подстройте x/y/w/h под реальное место Шагуни
-      hint: null
-    }
-  ]
-};
-
-/* ====== ССЫЛКИ НА DOM ====== */
-const $ = s => document.querySelector(s);
-const introImg = $('#introImg'), startBtn = $('#startBtn'),
-      stage = $('#stage'), bgLayer = $('#bg'),
-      loader = $('#loader'), errLayer = $('#err'),
-      sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'),
-      scoreEl = $('#score'), toast = $('#toast'),
-      nextBtn = $('#nextBtn'), reportBtn = $('#reportBtn'),
-      celebrate = $('#celebrate'), levelTask = $('#levelTask'),
-      levelLabel = $('#levelLabel'), progressBar = $('#progressBar');
-
-/* ====== СОСТОЯНИЕ ====== */
-let state = { score: 0, found: false, taskDone: false };
-let currentLevel = 0;
-
-/* ====== УТИЛИТЫ ====== */
-function preload(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(src); i.onerror=()=>rej(src); i.src=src; }); }
-function setBgSmart(url,pos){ bgLayer.style.opacity='0'; setTimeout(()=>{ bgLayer.style.backgroundImage=`url('${url}')`; bgLayer.style.backgroundPosition=pos||'center center'; bgLayer.style.backgroundSize='cover'; bgLayer.style.opacity='1'; },80); }
-function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
-function clickToPercent(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 }; }
-function pointInRect(pt,r){ return pt.x>=r.x-r.w/2 && pt.x<=r.x+r.w/2 && pt.y>=r.y-r.h/2 && pt.y<=r.y+r.h/2; }
-function showLoader(){ loader.hidden=false; loader.style.display='grid'; }
-function hideLoader(){ loader.hidden=true;  loader.style.display='none'; }
-
-/* ▲ NEW: HUD обновление */
-function updateHud(){
-  const total = GAME_CONFIG.levels.length;
-  levelLabel.textContent = `${currentLevel+1}/${total}`;
-  const doneCount = [...Array(total).keys()].filter(i => localStorage.getItem(`level_done_${i}`)==='1').length;
-  const progress = Math.round((doneCount/total)*100);
-  progressBar.style.width = progress + '%';
-}
-
-/* интро фон */
-preload(ASSETS.start)
-  .then(src => { introImg.src = src; introImg.onload = () => introImg.classList.add('ready'); })
-  .catch(() => introImg.remove());
-
-/* старт игры */
-startBtn.onclick = () => {
-  document.body.classList.remove('prestart');
-  document.body.classList.add('started');
-  // восстановим счёт по сохранённым уровням
-  const total = GAME_CONFIG.levels.length;
-  let restoredScore = 0;
-  for(let i=0;i<total;i++){ if(localStorage.getItem(`level_done_${i}`)==='1') restoredScore += 100; }
-  state.score = restoredScore; scoreEl.textContent = state.score;
-  currentLevel = 0;
-  startLevel(currentLevel);
-};
-
-/* запуск уровня */
-async function startLevel(i){
-  // сброс локального состояния уровня
-  state = { score: state.score, found: false, taskDone: false };
-  sidePanel.style.display='none';
-  levelTask.hidden = false;
-  nextBtn.setAttribute('aria-disabled','true');
-  hintBtn.hidden = !GAME_CONFIG.levels[i].hint;
-  updateHud();
-
-  showLoader(); errLayer.style.display='none';
-
-  const L = GAME_CONFIG.levels[i];
-  try{
-    const src = await preload(L.bg);
-    setBgSmart(src, L.bgPos);
-    if(L.bgFound) preload(L.bgFound);
-  }catch(e){
-    errLayer.style.display='grid';
-  }finally{
-    hideLoader();
-  }
-
-  stage.onclick = e => {
-    if(state.found) return;
-
-    // ▲ NEW: быстрый подбор координат хотспота
-    if(e.shiftKey){
-      const p = clickToPercent(e);
-      console.log(`Click @ x:${p.x.toFixed(2)} y:${p.y.toFixed(2)}`);
-    }
-
-    const pt = clickToPercent(e);
-    const hs = L.hotspot;
-    if(hs && pointInRect(pt, hs)) onFound(L,i);
-    else showToast('Не здесь 😊 Попробуй ещё!');
-  };
-}
-
-/* найдено */
-function onFound(L,levelIndex){
-  state.found = true;
-  showLoader();
-  setBgSmart(L.bgFound, L.bgFoundPos);
-  setTimeout(hideLoader, 300);
-
-  hintBtn.hidden = true;
-  levelTask.hidden = true;
-  sidePanel.style.display = 'block';
-
-  // начислим очки только 1 раз за уровень (если не был ранее засчитан)
-  if(localStorage.getItem(`level_done_${levelIndex}`)!=='1'){
-    state.score += 100;
-    scoreEl.textContent = state.score;
-  }
-}
-
-/* отчётность */
-const reportModal = $('#reportModal'),
-      cancelReport = $('#cancelReport'),
-      submitReport = $('#submitReport');
-
-reportBtn.onclick = () => reportModal.style.display='grid';
-cancelReport.onclick = () => reportModal.style.display='none';
-submitReport.onclick = () => {
-  const done = document.querySelector('input[name="task"]:checked');
-<script>
-/* ====== АССЕТЫ ====== */
-const ASSETS = {
-  start: 'start.jpg',
-  lvl1: 'lvl1.jpg',
-  lvl1found: 'lvl1found.jpg',
-  lvl2: 'lvl2.jpg',
-  lvl2found: 'lvl2found.jpg'
-};
-
-/* ====== НАСТРОЙКА УРОВНЕЙ ====== */
-const GAME_CONFIG = {
-  levels: [
-    {
-      bg: ASSETS.lvl1,
-      bgPos: 'center center',
-      bgFound: ASSETS.lvl1found,
-      bgFoundPos: 'center 60%',
-      hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
-      hint: null
+      hint: null,
+      // тексты для 1 уровня берём из верстки (справа), чтобы ничего не менять
+      taskText: '🎯 Задание: пройти 300 шагов или сделать зарядку на 2 минуты.'
     },
     {
       bg: ASSETS.lvl2,
@@ -329,36 +179,34 @@ const GAME_CONFIG = {
       bgFoundPos: 'center center',
       hotspot: { x: 80, y: 70, w: 5, h: 9 },
       hint: null,
-      introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов ☕👣',
+      introTitle: 'Горячий какао',
+      introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
       taskText: '🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.'
     }
   ]
 };
 
-/* ====== DOM ====== */
-const $ = s => document.querySelector(s);
-const introImg = $('#introImg'), startBtn = $('#startBtn'),
-      stage = $('#stage'), bgLayer = $('#bg'),
-      loader = $('#loader'), errLayer = $('#err'),
-      sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'),
-      scoreEl = $('#score'), toast = $('#toast'),
-      nextBtn = $('#nextBtn'), reportBtn = $('#reportBtn'),
-      celebrate = $('#celebrate'), levelTask = $('#levelTask'),
-      levelLabel = $('#levelLabel'), progressBar = $('#progressBar'),
-      levelIntro = $('#levelIntro');
+/* === DOM === */
+const $=s=>document.querySelector(s);
+const introImg=$('#introImg'), startBtn=$('#startBtn'), stage=$('#stage'), bgLayer=$('#bg'),
+      loader=$('#loader'), errLayer=$('#err'), sidePanel=$('#sidePanel'),
+      hintBtn=$('#hintBtn'), scoreEl=$('#score'), toast=$('#toast'),
+      nextBtn=$('#nextBtn'), reportBtn=$('#reportBtn'), celebrate=$('#celebrate'),
+      levelTask=$('#levelTask'), levelLabel=$('#levelLabel'), progressBar=$('#progressBar'),
+      hintText=$('#hintText'), reportOptions=$('#reportOptions');
 
-/* ====== СОСТОЯНИЕ ====== */
-let state = { score: 0, found: false, taskDone: false };
-let currentLevel = 0;
+/* === СОСТОЯНИЕ === */
+let state={score:0,found:false,taskDone:false};
+let currentLevel=0;
 
-/* ====== УТИЛИТЫ ====== */
-function preload(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(src); i.onerror=()=>rej(src); i.src=src; }); }
-function setBgSmart(url,pos){ bgLayer.style.opacity='0'; setTimeout(()=>{ bgLayer.style.backgroundImage=`url('${url}')`; bgLayer.style.backgroundPosition=pos||'center center'; bgLayer.style.backgroundSize='cover'; bgLayer.style.opacity='1'; },80); }
-function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
-function clickToPercent(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 }; }
-function pointInRect(pt,r){ return pt.x>=r.x-r.w/2 && pt.x<=r.x+r.w/2 && pt.y>=r.y-r.h/2 && pt.y<=r.y+r.h/2; }
-function showLoader(){ loader.hidden=false; loader.style.display='grid'; }
-function hideLoader(){ loader.hidden=true;  loader.style.display='none'; }
+/* === УТИЛИТЫ === */
+function preload(src){return new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(src);i.onerror=()=>rej(src);i.src=src;});}
+function setBgSmart(url,pos){bgLayer.style.opacity='0';setTimeout(()=>{bgLayer.style.backgroundImage=`url('${url}')`;bgLayer.style.backgroundPosition=pos||'center center';bgLayer.style.backgroundSize='cover';bgLayer.style.opacity='1';},80);}
+function showToast(msg,t=1600){toast.textContent=msg;toast.style.display='block';clearTimeout(showToast.tid);showToast.tid=setTimeout(()=>toast.style.display='none',t);}
+function clickToPercent(e){const r=stage.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}
+function pointInRect(pt,r){return pt.x>=r.x-r.w/2 && pt.x<=r.x+r.w/2 && pt.y>=r.y-r.h/2 && pt.y<=r.y+r.h/2;}
+function showLoader(){loader.hidden=false;loader.style.display='grid';}
+function hideLoader(){loader.hidden=true;loader.style.display='none';}
 function updateHud(){
   const total = GAME_CONFIG.levels.length;
   levelLabel.textContent = `${currentLevel+1}/${total}`;
@@ -367,40 +215,36 @@ function updateHud(){
   progressBar.style.width = progress + '%';
 }
 
-/* ====== ИНТРО ФОН ====== */
-preload(ASSETS.start)
-  .then(src => { introImg.src = src; introImg.onload = () => introImg.classList.add('ready'); })
-  .catch(() => introImg.remove());
+/* === ИНТРО ФОН === */
+preload(ASSETS.start).then(src=>{introImg.src=src;introImg.onload=()=>introImg.classList.add('ready');}).catch(()=>introImg.remove());
 
-/* ====== СТАРТ ====== */
-startBtn.onclick = () => {
+/* === СТАРТ === */
+startBtn.onclick=()=>{
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
-  const total = GAME_CONFIG.levels.length;
-  let restoredScore = 0;
-  for(let i=0;i<total;i++){ if(localStorage.getItem(`level_done_${i}`)==='1') restoredScore += 100; }
-  state.score = restoredScore; scoreEl.textContent = state.score;
-  currentLevel = 0;
-  startLevel(currentLevel);
+  // стартуем с уровня 0
+  startLevel(0);
 };
 
-/* ====== ЗАПУСК УРОВНЯ ====== */
+/* === ЗАПУСК УРОВНЯ === */
 async function startLevel(i){
-  const L = GAME_CONFIG.levels[i];
-  state = { score: state.score, found: false, taskDone: false };
+  currentLevel = i;
+  state={score:state.score,found:false,taskDone:false};
   sidePanel.style.display='none';
-  levelTask.hidden = false;
+  levelTask.hidden=false;
   nextBtn.setAttribute('aria-disabled','true');
-  hintBtn.hidden = !L.hint;
+  errLayer.style.display='none';
+
+  // HUD
   updateHud();
 
-  if(levelIntro && L.introText) levelIntro.innerHTML = `<p>${L.introText}</p>`;
-  if(levelTask && L.taskText) levelTask.innerHTML = `<p>${L.taskText}</p>`;
+  const L=GAME_CONFIG.levels[i];
+  hintBtn.hidden=!L.hint;
 
-  showLoader(); errLayer.style.display='none';
+  showLoader();
   try{
-    const src = await preload(L.bg);
-    setBgSmart(src, L.bgPos);
+    const src=await preload(L.bg);
+    setBgSmart(src,L.bgPos);
     if(L.bgFound) preload(L.bgFound);
   }catch(e){
     errLayer.style.display='grid';
@@ -408,72 +252,99 @@ async function startLevel(i){
     hideLoader();
   }
 
-  stage.onclick = e => {
+  // нижняя плашка: «Найди Шагуню...»
+  levelTask.textContent='Найди Шагуню на картинке';
+
+  stage.onclick=e=>{
     if(state.found) return;
     if(e.shiftKey){
-      const p = clickToPercent(e);
+      const p=clickToPercent(e);
       console.log(`Click @ x:${p.x.toFixed(2)} y:${p.y.toFixed(2)}`);
     }
-    const pt = clickToPercent(e);
-    if(L.hotspot && pointInRect(pt, L.hotspot)) onFound(L,i);
+    const pt=clickToPercent(e);
+    if(L.hotspot && pointInRect(pt,L.hotspot)) onFound(L,i);
     else showToast('Не здесь 😊 Попробуй ещё!');
   };
 }
 
-/* ====== НАЙДЕНО ====== */
-function onFound(L,levelIndex){
-  state.found = true;
+/* === НАЙДЕНО === */
+function onFound(L, idx){
+  state.found=true;
   showLoader();
-  setBgSmart(L.bgFound, L.bgFoundPos);
-  setTimeout(hideLoader, 300);
+  setBgSmart(L.bgFound,L.bgFoundPos);
+  setTimeout(hideLoader,300);
 
-  hintBtn.hidden = true;
-  levelTask.hidden = true;
-  sidePanel.style.display = 'block';
+  // подготавливаем панель справа
+  const titleEl = sidePanel.querySelector('h3');
+  const paraEl  = sidePanel.querySelector('p');
 
-  if(localStorage.getItem(`level_done_${levelIndex}`)!=='1'){
-    state.score += 100;
-    scoreEl.textContent = state.score;
+  if(idx===0){
+    // Уровень 1 — ничего не меняем (твои оригинальные тексты)
+    hintText.innerHTML = '🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.';
+  } else if(idx===1){
+    // Уровень 2 — подставляем ТВОИ тексты
+    if(titleEl) titleEl.textContent = 'Горячий какао';
+    if(paraEl)  paraEl.textContent  = 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов';
+    if(hintText) hintText.innerHTML = '🎯 <b>Задание:</b> сделать 500 шагов под музыку или пошагать на месте 1 минуту.';
+  }
+
+  // опции отчёта под уровень
+  if(idx===0){
+    reportOptions.innerHTML = `
+      <label><input type="radio" name="task" value="steps300"> Я прошёл(ла) 300 шагов</label><br/>
+      <label><input type="radio" name="task" value="warmup2m"> Я сделал(а) зарядку 2 минуты</label>
+    `;
+  } else if(idx===1){
+    reportOptions.innerHTML = `
+      <label><input type="radio" name="task" value="steps500"> Я сделал(а) 500 шагов под музыку</label><br/>
+      <label><input type="radio" name="task" value="march1m"> Я пошагал(а) на месте 1 минуту</label>
+    `;
+  }
+
+  hintBtn.hidden=true;
+  levelTask.hidden=true;
+  sidePanel.style.display='block';
+
+  // начислим очки только один раз за уровень
+  if(localStorage.getItem(`level_done_${idx}`)!=='1'){
+    state.score+=100;
+    scoreEl.textContent=state.score;
   }
 }
 
-/* ====== ОТЧЁТ ====== */
-const reportModal = $('#reportModal'),
-      cancelReport = $('#cancelReport'),
-      submitReport = $('#submitReport');
-
-reportBtn.onclick = () => reportModal.style.display='grid';
-cancelReport.onclick = () => reportModal.style.display='none';
-submitReport.onclick = () => {
-  const done = document.querySelector('input[name="task"]:checked');
-  if(!done){ showToast('Выбери вариант выполнения 🙂'); return; }
-
-  state.taskDone = true;
-  localStorage.setItem(`level_done_${currentLevel}`, '1');
+/* === ОТЧЁТ === */
+const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
+reportBtn.onclick=()=>reportModal.style.display='grid';
+cancelReport.onclick=()=>reportModal.style.display='none';
+submitReport.onclick=()=>{
+  const done=document.querySelector('input[name="task"]:checked');
+  if(!done){showToast('Выбери вариант выполнения 🙂');return;}
+  state.taskDone=true;
+  localStorage.setItem(`level_done_${currentLevel}`,'1');
   reportModal.style.display='none';
   nextBtn.removeAttribute('aria-disabled');
 
+  // сердечко
   celebrate.style.display='grid';
-  const h = celebrate.firstElementChild;
+  const h=celebrate.firstElementChild;
   h.style.animation='none'; void h.offsetWidth; h.style.animation='';
-  setTimeout(() => celebrate.style.display='none', 1200);
+  setTimeout(()=>celebrate.style.display='none',1200);
 
-  showToast('Отлично! Уровень засчитан ✅', 1800);
+  showToast('Отлично! Уровень засчитан ✅',1800);
   updateHud();
 };
 
-/* ====== СЛЕДУЮЩИЙ УРОВЕНЬ ====== */
-nextBtn.onclick = () => {
+/* === СЛЕДУЮЩИЙ УРОВЕНЬ === */
+nextBtn.onclick=()=>{
   if(!state.taskDone){
-    showToast('Ой, вы ещё не выполнили задание от Шагуни 🙃', 2200);
+    showToast('Ой, вы ещё не выполнили задание от Шагуни 🙃',2200);
     return;
   }
   const last = GAME_CONFIG.levels.length - 1;
   if(currentLevel < last){
-    currentLevel += 1;
-    startLevel(currentLevel);
+    startLevel(currentLevel + 1);
   }else{
-    showToast('Все уровни пройдены! 🎉', 2200);
+    showToast('Все уровни пройдены! 🎉',2000);
   }
 };
 </script>
