@@ -12,6 +12,11 @@ button{cursor:pointer;background:var(--brand);color:#fff;border:none;border-radi
 button:hover{box-shadow:0 4px 14px rgba(226,74,39,.3);transform:translateY(-1px)}
 button[aria-disabled="true"]{opacity:.6;cursor:default;box-shadow:none;transform:none}
 
+/* состояния */
+body.prestart #hud,
+body.prestart #gameWrap { display: none !important; }
+body.started #introWrap { display: none !important; }
+
 /* Intro */
 .intro-wrap{max-width:960px;margin:0 auto;padding:20px}
 .intro{position:relative;overflow:hidden;border-radius:18px;background:#f1f2f3;box-shadow:0 10px 30px rgba(0,0,0,.08)}
@@ -71,8 +76,8 @@ footer{text-align:right;margin-top:16px}
       <p>В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
       <blockquote class="msg">
         <div class="msg-head">
-          <span class="msg-avatar" aria-hidden="true">👻</span>
-          <span class="msg-author">Шагуня</span>
+          <span class="msg-avatar" aria-hidden="true">❔</span>
+          <span class="msg-author">Неизвестно</span>
           <span class="msg-dot">•</span>
           <time class="msg-time">сегодня</time>
         </div>
@@ -146,7 +151,7 @@ function preload(src){return new Promise((r,j)=>{const i=new Image();i.onload=()
 function setBg(url){bgLayer.style.opacity='0';setTimeout(()=>{bgLayer.style.backgroundImage=`url('${url}')`;bgLayer.style.opacity='1';},80);}
 function showToast(msg,t=1500){toast.textContent=msg;toast.style.display='block';clearTimeout(showToast.tid);showToast.tid=setTimeout(()=>toast.style.display='none',t);}
 preload(ASSETS.start).then(s=>{introImg.src=s;introImg.onload=()=>introImg.classList.add('ready');});
-startBtn.onclick=()=>{document.body.classList.remove('prestart');startLevel(0);}
+startBtn.onclick=()=>{document.body.classList.remove('prestart');document.body.classList.add('started');startLevel(0);}
 function clickPt(e){const r=stage.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}
 function inside(p,r){return p.x>=r.x-r.w/2&&p.x<=r.x+r.w/2&&p.y>=r.y-r.h/2&&p.y<=r.y+r.h/2;}
 function startLevel(i){
