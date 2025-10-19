@@ -301,6 +301,151 @@ reportBtn.onclick = () => reportModal.style.display='grid';
 cancelReport.onclick = () => reportModal.style.display='none';
 submitReport.onclick = () => {
   const done = document.querySelector('input[name="task"]:checked');
+<script>
+/* ====== АССЕТЫ ====== */
+const ASSETS = {
+  start: 'start.jpg',
+  lvl1: 'lvl1.jpg',
+  lvl1found: 'lvl1found.jpg',
+  lvl2: 'lvl2.jpg',
+  lvl2found: 'lvl2found.jpg'
+};
+
+/* ====== НАСТРОЙКА УРОВНЕЙ ====== */
+const GAME_CONFIG = {
+  levels: [
+    {
+      bg: ASSETS.lvl1,
+      bgPos: 'center center',
+      bgFound: ASSETS.lvl1found,
+      bgFoundPos: 'center 60%',
+      hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
+      hint: null
+    },
+    {
+      bg: ASSETS.lvl2,
+      bgPos: 'center center',
+      bgFound: ASSETS.lvl2found,
+      bgFoundPos: 'center center',
+      hotspot: { x: 80, y: 70, w: 5, h: 9 },
+      hint: null,
+      introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов ☕👣',
+      taskText: '🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.'
+    }
+  ]
+};
+
+/* ====== DOM ====== */
+const $ = s => document.querySelector(s);
+const introImg = $('#introImg'), startBtn = $('#startBtn'),
+      stage = $('#stage'), bgLayer = $('#bg'),
+      loader = $('#loader'), errLayer = $('#err'),
+      sidePanel = $('#sidePanel'), hintBtn = $('#hintBtn'),
+      scoreEl = $('#score'), toast = $('#toast'),
+      nextBtn = $('#nextBtn'), reportBtn = $('#reportBtn'),
+      celebrate = $('#celebrate'), levelTask = $('#levelTask'),
+      levelLabel = $('#levelLabel'), progressBar = $('#progressBar'),
+      levelIntro = $('#levelIntro');
+
+/* ====== СОСТОЯНИЕ ====== */
+let state = { score: 0, found: false, taskDone: false };
+let currentLevel = 0;
+
+/* ====== УТИЛИТЫ ====== */
+function preload(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(src); i.onerror=()=>rej(src); i.src=src; }); }
+function setBgSmart(url,pos){ bgLayer.style.opacity='0'; setTimeout(()=>{ bgLayer.style.backgroundImage=`url('${url}')`; bgLayer.style.backgroundPosition=pos||'center center'; bgLayer.style.backgroundSize='cover'; bgLayer.style.opacity='1'; },80); }
+function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
+function clickToPercent(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 }; }
+function pointInRect(pt,r){ return pt.x>=r.x-r.w/2 && pt.x<=r.x+r.w/2 && pt.y>=r.y-r.h/2 && pt.y<=r.y+r.h/2; }
+function showLoader(){ loader.hidden=false; loader.style.display='grid'; }
+function hideLoader(){ loader.hidden=true;  loader.style.display='none'; }
+function updateHud(){
+  const total = GAME_CONFIG.levels.length;
+  levelLabel.textContent = `${currentLevel+1}/${total}`;
+  const doneCount = [...Array(total).keys()].filter(i => localStorage.getItem(`level_done_${i}`)==='1').length;
+  const progress = Math.round((doneCount/total)*100);
+  progressBar.style.width = progress + '%';
+}
+
+/* ====== ИНТРО ФОН ====== */
+preload(ASSETS.start)
+  .then(src => { introImg.src = src; introImg.onload = () => introImg.classList.add('ready'); })
+  .catch(() => introImg.remove());
+
+/* ====== СТАРТ ====== */
+startBtn.onclick = () => {
+  document.body.classList.remove('prestart');
+  document.body.classList.add('started');
+  const total = GAME_CONFIG.levels.length;
+  let restoredScore = 0;
+  for(let i=0;i<total;i++){ if(localStorage.getItem(`level_done_${i}`)==='1') restoredScore += 100; }
+  state.score = restoredScore; scoreEl.textContent = state.score;
+  currentLevel = 0;
+  startLevel(currentLevel);
+};
+
+/* ====== ЗАПУСК УРОВНЯ ====== */
+async function startLevel(i){
+  const L = GAME_CONFIG.levels[i];
+  state = { score: state.score, found: false, taskDone: false };
+  sidePanel.style.display='none';
+  levelTask.hidden = false;
+  nextBtn.setAttribute('aria-disabled','true');
+  hintBtn.hidden = !L.hint;
+  updateHud();
+
+  if(levelIntro && L.introText) levelIntro.innerHTML = `<p>${L.introText}</p>`;
+  if(levelTask && L.taskText) levelTask.innerHTML = `<p>${L.taskText}</p>`;
+
+  showLoader(); errLayer.style.display='none';
+  try{
+    const src = await preload(L.bg);
+    setBgSmart(src, L.bgPos);
+    if(L.bgFound) preload(L.bgFound);
+  }catch(e){
+    errLayer.style.display='grid';
+  }finally{
+    hideLoader();
+  }
+
+  stage.onclick = e => {
+    if(state.found) return;
+    if(e.shiftKey){
+      const p = clickToPercent(e);
+      console.log(`Click @ x:${p.x.toFixed(2)} y:${p.y.toFixed(2)}`);
+    }
+    const pt = clickToPercent(e);
+    if(L.hotspot && pointInRect(pt, L.hotspot)) onFound(L,i);
+    else showToast('Не здесь 😊 Попробуй ещё!');
+  };
+}
+
+/* ====== НАЙДЕНО ====== */
+function onFound(L,levelIndex){
+  state.found = true;
+  showLoader();
+  setBgSmart(L.bgFound, L.bgFoundPos);
+  setTimeout(hideLoader, 300);
+
+  hintBtn.hidden = true;
+  levelTask.hidden = true;
+  sidePanel.style.display = 'block';
+
+  if(localStorage.getItem(`level_done_${levelIndex}`)!=='1'){
+    state.score += 100;
+    scoreEl.textContent = state.score;
+  }
+}
+
+/* ====== ОТЧЁТ ====== */
+const reportModal = $('#reportModal'),
+      cancelReport = $('#cancelReport'),
+      submitReport = $('#submitReport');
+
+reportBtn.onclick = () => reportModal.style.display='grid';
+cancelReport.onclick = () => reportModal.style.display='none';
+submitReport.onclick = () => {
+  const done = document.querySelector('input[name="task"]:checked');
   if(!done){ showToast('Выбери вариант выполнения 🙂'); return; }
 
   state.taskDone = true;
@@ -308,7 +453,6 @@ submitReport.onclick = () => {
   reportModal.style.display='none';
   nextBtn.removeAttribute('aria-disabled');
 
-  // сердечко
   celebrate.style.display='grid';
   const h = celebrate.firstElementChild;
   h.style.animation='none'; void h.offsetWidth; h.style.animation='';
@@ -318,7 +462,7 @@ submitReport.onclick = () => {
   updateHud();
 };
 
-/* следующий уровень */
+/* ====== СЛЕДУЮЩИЙ УРОВЕНЬ ====== */
 nextBtn.onclick = () => {
   if(!state.taskDone){
     showToast('Ой, вы ещё не выполнили задание от Шагуни 🙃', 2200);
@@ -330,9 +474,8 @@ nextBtn.onclick = () => {
     startLevel(currentLevel);
   }else{
     showToast('Все уровни пройдены! 🎉', 2200);
-    // можно добавить здесь «рестарт» или переход на страницу результата
   }
 };
-    </script>
+</script>
 </body>
 </html>
