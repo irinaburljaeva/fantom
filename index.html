@@ -21,15 +21,51 @@ body.started  #introWrap{display:none!important}
 .intro img{width:100%;height:100%;object-fit:cover;display:block;filter:brightness(.9) saturate(1.02);opacity:0;transition:opacity .35s}
 .intro img.ready{opacity:1}
 .intro::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 60% at 50% 50%,rgba(0,0,0,.06)0%,rgba(0,0,0,.22)100%)}
-.intro .panel{position:relative;z-index:1;width:min(740px,92vw);background:rgba(255,255,255,.78);color:#202226;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:14px 14px 12px;box-shadow:0 14px 36px rgba(0,0,0,.10);backdrop-filter:blur(5px)}
-.intro h1{margin:0 0 6px;letter-spacing:.2px;font-size:clamp(20px,2vw + 11px,26px);line-height:1.15}
+
+/* ПАНЕЛЬ — «стекло» + блеск */
+.intro .panel{
+  position:relative;z-index:1;width:min(740px,92vw);
+  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.72));
+  color:#202226;border:1px solid rgba(0,0,0,.08);border-radius:14px;
+  padding:14px 14px 12px;box-shadow:0 18px 44px rgba(0,0,0,.16);
+  backdrop-filter:blur(8px);overflow:hidden;
+}
+.intro .panel::after{
+  content:"";position:absolute;inset:-40% -20% auto -20%;height:200%;
+  background:linear-gradient(70deg,transparent 40%,rgba(255,255,255,.45) 50%,transparent 60%);
+  transform:translateX(-120%) rotate(8deg);
+  animation:panelShine 7s ease-in-out 1.2s infinite;pointer-events:none;mix-blend-mode:screen;
+}
+@keyframes panelShine{0%,85%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(120%) rotate(8deg)}}
+
+.intro h1{margin:0 0 6px;letter-spacing:.2px;font-size:clamp(20px,2vw + 11px,26px);line-height:1.15;
+  text-shadow:0 1px 0 #fff, 0 10px 24px rgba(226,74,39,.12)}
 .intro p{margin:8px 0 0}
 .intro blockquote{margin:10px 0;padding:10px 12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.06);position:relative;font-size:.97em;line-height:1.35}
 .intro blockquote::before{content:"“";position:absolute;left:8px;top:-12px;font-size:28px;color:var(--brand);opacity:.85;line-height:1}
 
 /* кнопки */
-.btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25)}
-.btn[aria-disabled="true"]{opacity:.55;cursor:not-allowed;filter:grayscale(.1)}
+.btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25);
+  transition: transform .15s ease, box-shadow .2s ease}
+.btn:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(226,74,39,.35) }
+.btn:active{ transform:translateY(0) scale(.98) }
+@media (prefers-reduced-motion:no-preference){
+  .btn{ animation:pulse 2.4s ease-in-out 1.2s infinite }
+}
+@keyframes pulse{0%,100%{box-shadow:0 6px 18px rgba(226,74,39,.25)}50%{box-shadow:0 10px 26px rgba(226,74,39,.38)}}
+
+/* падающие листочки */
+.leaves{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.leaf{position:absolute;top:-10%;font-size:clamp(16px,2.2vw,24px);opacity:.85;filter:drop-shadow(0 6px 6px rgba(0,0,0,.15));
+  animation:fall var(--t,11s) linear var(--d,0s) infinite;transform:translateX(0) rotate(var(--r,0deg))}
+.leaf[data-t="1"]::before{content:"🍁"} .leaf[data-t="2"]::before{content:"🍂"} .leaf[data-t="3"]::before{content:"🍃"}
+@keyframes fall{
+  0%{transform:translateX(0) translateY(-10%) rotate(0deg);opacity:.95}
+  25%{transform:translateX(-6vw) translateY(25vh) rotate(60deg)}
+  50%{transform:translateX(5vw) translateY(50vh) rotate(140deg)}
+  75%{transform:translateX(-4vw) translateY(75vh) rotate(220deg)}
+  100%{transform:translateX(6vw) translateY(110vh) rotate(300deg);opacity:.9}
+}
 
 @media (max-width:560px){
   .intro{min-height:50vh;max-height:72vh;border-radius:16px}
@@ -84,6 +120,9 @@ body.started  #introWrap{display:none!important}
 <div class="intro-wrap" id="introWrap">
   <section id="intro" class="intro">
     <figure><img id="introImg" alt="Осенний лес"></figure>
+    <!-- Листочки -->
+    <div class="leaves" aria-hidden="true"></div>
+
     <div class="panel">
       <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
       <p>В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
@@ -117,13 +156,11 @@ body.started  #introWrap{display:none!important}
   </div>
 
   <aside id="sidePanel" class="side">
-    <!-- ВАЖНО: контент этого блока для 1 уровня остаётся как в твоём файле -->
+    <!-- Контент для 1 уровня — как в твоём оригинальном файле -->
     <h3>Доброе утро!</h3>
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
     <div class="hint">
-      <div id="hintText"><!-- обновляем программно -->
-        🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.
-      </div>
+      <div id="hintText">🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.</div>
       <div style="margin-top:6px;">🕒 Следующий уровень откроется после выполнения задания.</div>
     </div>
     <div class="btns">
@@ -138,7 +175,7 @@ body.started  #introWrap{display:none!important}
   <div class="card">
     <h4>Отчёт по заданию</h4>
     <div id="reportOptions">
-      <!-- Для уровня 1 (как в твоём файле): -->
+      <!-- Для уровня 1 -->
       <label><input type="radio" name="task" value="steps300"> Я прошёл(ла) 300 шагов</label><br/>
       <label><input type="radio" name="task" value="warmup2m"> Я сделал(а) зарядку 2 минуты</label>
     </div>
@@ -159,7 +196,7 @@ const ASSETS = {
   lvl2:'lvl2.jpg',       lvl2found:'lvl2found.jpg'
 };
 
-/* === КОНФИГ УРОВНЕЙ: уровень 1 — без изменений; уровень 2 — по твоим данным === */
+/* === КОНФИГ УРОВНЕЙ: 1 — без изменений; 2 — какао и задание === */
 const GAME_CONFIG = {
   levels: [
     {
@@ -169,7 +206,6 @@ const GAME_CONFIG = {
       bgFoundPos: 'center 60%',
       hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
       hint: null,
-      // тексты для 1 уровня берём из верстки (справа), чтобы ничего не менять
       taskText: '🎯 Задание: пройти 300 шагов или сделать зарядку на 2 минуты.'
     },
     {
@@ -220,9 +256,9 @@ preload(ASSETS.start).then(src=>{introImg.src=src;introImg.onload=()=>introImg.c
 
 /* === СТАРТ === */
 startBtn.onclick=()=>{
+  // конфетти добавляется отдельным обработчиком ниже
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
-  // стартуем с уровня 0
   startLevel(0);
 };
 
@@ -234,8 +270,6 @@ async function startLevel(i){
   levelTask.hidden=false;
   nextBtn.setAttribute('aria-disabled','true');
   errLayer.style.display='none';
-
-  // HUD
   updateHud();
 
   const L=GAME_CONFIG.levels[i];
@@ -252,7 +286,6 @@ async function startLevel(i){
     hideLoader();
   }
 
-  // нижняя плашка: «Найди Шагуню...»
   levelTask.textContent='Найди Шагуню на картинке';
 
   stage.onclick=e=>{
@@ -274,21 +307,21 @@ function onFound(L, idx){
   setBgSmart(L.bgFound,L.bgFoundPos);
   setTimeout(hideLoader,300);
 
-  // подготавливаем панель справа
+  // готовим правую панель под уровень
   const titleEl = sidePanel.querySelector('h3');
   const paraEl  = sidePanel.querySelector('p');
 
   if(idx===0){
-    // Уровень 1 — ничего не меняем (твои оригинальные тексты)
-    hintText.innerHTML = '🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.';
+    // Уровень 1 — тексты как в оригинале
+    if(hintText) hintText.innerHTML = '🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.';
   } else if(idx===1){
-    // Уровень 2 — подставляем ТВОИ тексты
+    // Уровень 2 — тексты по ТЗ
     if(titleEl) titleEl.textContent = 'Горячий какао';
     if(paraEl)  paraEl.textContent  = 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов';
     if(hintText) hintText.innerHTML = '🎯 <b>Задание:</b> сделать 500 шагов под музыку или пошагать на месте 1 минуту.';
   }
 
-  // опции отчёта под уровень
+  // опции отчёта
   if(idx===0){
     reportOptions.innerHTML = `
       <label><input type="radio" name="task" value="steps300"> Я прошёл(ла) 300 шагов</label><br/>
@@ -305,7 +338,6 @@ function onFound(L, idx){
   levelTask.hidden=true;
   sidePanel.style.display='block';
 
-  // начислим очки только один раз за уровень
   if(localStorage.getItem(`level_done_${idx}`)!=='1'){
     state.score+=100;
     scoreEl.textContent=state.score;
@@ -324,7 +356,6 @@ submitReport.onclick=()=>{
   reportModal.style.display='none';
   nextBtn.removeAttribute('aria-disabled');
 
-  // сердечко
   celebrate.style.display='grid';
   const h=celebrate.firstElementChild;
   h.style.animation='none'; void h.offsetWidth; h.style.animation='';
@@ -347,6 +378,83 @@ nextBtn.onclick=()=>{
     showToast('Все уровни пройдены! 🎉',2000);
   }
 };
+</script>
+
+<!-- WOW-эффекты интро: параллакс, листья, конфетти -->
+<script>
+// Параллакс фона в интро
+(() => {
+  const img = document.getElementById('introImg');
+  const intro = document.getElementById('intro');
+  if(!img || !intro) return;
+  let raf;
+  function onMove(e){
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(()=> {
+      const r = intro.getBoundingClientRect();
+      const src = ('touches' in e && e.touches.length ? e.touches[0] : e);
+      const cx = (src.clientX ?? (r.left + r.width/2)) - r.left;
+      const cy = (src.clientY ?? (r.top  + r.height/2)) - r.top;
+      const x = ((cx / r.width)  - .5) * 10;
+      const y = ((cy / r.height) - .5) * 10;
+      img.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
+    });
+  }
+  intro.addEventListener('mousemove', onMove, {passive:true});
+  intro.addEventListener('touchmove', onMove, {passive:true});
+})();
+
+// Падающие листочки
+(() => {
+  const box = document.querySelector('.leaves');
+  if(!box) return;
+  const N = 14;
+  for (let i=0;i<N;i++){
+    const s = document.createElement('span');
+    s.className = 'leaf';
+    s.dataset.t = (i % 3) + 1;
+    s.style.left = Math.random()*100 + 'vw';
+    s.style.setProperty('--t', (9 + Math.random()*6) + 's');
+    s.style.setProperty('--d', (Math.random()*5) + 's');
+    s.style.setProperty('--r', (Math.random()*60 - 30) + 'deg');
+    box.appendChild(s);
+  }
+})();
+
+// Конфетти при клике «Начать игру»
+(() => {
+  const btn = document.getElementById('startBtn');
+  if(!btn) return;
+  btn.addEventListener('click', (e)=> {
+    const burst = document.createElement('div');
+    Object.assign(burst.style, {
+      position:'fixed', left:(e.clientX||window.innerWidth/2)+'px',
+      top:(e.clientY||window.innerHeight/2)+'px', pointerEvents:'none', zIndex:9999
+    });
+    document.body.appendChild(burst);
+    const n=80;
+    for(let i=0;i<n;i++){
+      const d=document.createElement('i');
+      const size = 4 + Math.random()*6;
+      const ang = Math.random()*Math.PI*2;
+      const vel = 3 + Math.random()*6;
+      d.style.position='absolute';
+      d.style.width=size+'px'; d.style.height=size+'px';
+      d.style.background = ['#e24a27','#FFBA08','#E85D04','#D9D9D9','#ffffff'][i%5];
+      d.style.borderRadius = (Math.random()>.5? '50%' : '2px');
+      d.style.transform = 'translate(0,0)';
+      d.style.opacity = '1';
+      burst.appendChild(d);
+      const tx = Math.cos(ang)*vel*20, ty = Math.sin(ang)*vel*18 - 10;
+      d.animate([
+        { transform:'translate(0,0) rotate(0deg)', opacity:1 },
+        { transform:`translate(${tx/2}px, ${ty/2}px) rotate(180deg)`, opacity:1 },
+        { transform:`translate(${tx}px, ${ty}px) rotate(360deg)`, opacity:0 }
+      ], { duration: 900 + Math.random()*300, easing:'cubic-bezier(.2,.6,.2,1)', fill:'forwards' });
+    }
+    setTimeout(()=> burst.remove(), 1200);
+  });
+})();
 </script>
 </body>
 </html>
