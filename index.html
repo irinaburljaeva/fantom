@@ -14,7 +14,7 @@ body{margin:0;background:var(--page);color:var(--text);font:16px/1.45 Inter,syst
 body.prestart #hud, body.prestart #gameWrap{display:none!important}
 body.started  #introWrap{display:none!important}
 
-/* интро */
+/* интро — базовые */
 .intro-wrap{max-width:1280px;margin:16px auto;padding:0 12px}
 .intro{position:relative;display:grid;place-items:center;overflow:hidden;border-radius:18px;background:#eff1f3;min-height:52vh;max-height:78vh;box-shadow:0 16px 40px rgba(0,0,0,.10);border:1px solid rgba(0,0,0,.06)}
 .intro figure{position:absolute;inset:0;margin:0}
@@ -22,55 +22,56 @@ body.started  #introWrap{display:none!important}
 .intro img.ready{opacity:1}
 .intro::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 60% at 50% 50%,rgba(0,0,0,.06)0%,rgba(0,0,0,.22)100%)}
 
-/* ПАНЕЛЬ — «стекло» + блеск */
-.intro .panel{
-  position:relative;z-index:1;width:min(740px,92vw);
-  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.72));
-  color:#202226;border:1px solid rgba(0,0,0,.08);border-radius:14px;
-  padding:14px 14px 12px;box-shadow:0 18px 44px rgba(0,0,0,.16);
-  backdrop-filter:blur(8px);overflow:hidden;
+/* —— Новый «герой» интро —— */
+.intro-modern { background:#eff1f3; }
+.intro-modern .hero{
+  position:relative;
+  width:min(780px,92vw);
+  padding:16px 16px 14px;
+  border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.86),rgba(255,255,255,.74));
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 18px 44px rgba(0,0,0,.16);
+  backdrop-filter:blur(8px);
+  overflow:hidden;
 }
-.intro .panel::after{
-  content:"";position:absolute;inset:-40% -20% auto -20%;height:200%;
-  background:linear-gradient(70deg,transparent 40%,rgba(255,255,255,.45) 50%,transparent 60%);
-  transform:translateX(-120%) rotate(8deg);
-  animation:panelShine 7s ease-in-out 1.2s infinite;pointer-events:none;mix-blend-mode:screen;
+.intro-modern .hero::before{
+  content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
+  padding:1px;
+  background:
+    linear-gradient(120deg, rgba(226,74,39,.55), rgba(255,255,255,0) 30%, rgba(226,74,39,.55)),
+    radial-gradient(120% 80% at 10% 0%, rgba(226,74,39,.18), transparent 60%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+  animation:heroBorder 9s ease-in-out infinite;
 }
-@keyframes panelShine{0%,85%{transform:translateX(-120%) rotate(8deg)}100%{transform:translateX(120%) rotate(8deg)}}
+@keyframes heroBorder{0%,100%{opacity:.75;filter:blur(.2px)}50%{opacity:.95;filter:blur(0)}}
 
-.intro h1{margin:0 0 6px;letter-spacing:.2px;font-size:clamp(20px,2vw + 11px,26px);line-height:1.15;
-  text-shadow:0 1px 0 #fff, 0 10px 24px rgba(226,74,39,.12)}
-.intro p{margin:8px 0 0}
-.intro blockquote{margin:10px 0;padding:10px 12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.06);position:relative;font-size:.97em;line-height:1.35}
-.intro blockquote::before{content:"“";position:absolute;left:8px;top:-12px;font-size:28px;color:var(--brand);opacity:.85;line-height:1}
-
-/* кнопки */
-.btn{cursor:pointer;border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:700;padding:10px 14px;box-shadow:0 6px 18px rgba(226,74,39,.25);
-  transition: transform .15s ease, box-shadow .2s ease}
-.btn:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(226,74,39,.35) }
-.btn:active{ transform:translateY(0) scale(.98) }
-@media (prefers-reduced-motion:no-preference){
-  .btn{ animation:pulse 2.4s ease-in-out 1.2s infinite }
+.hero-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:6px}
+.ghost-badge{
+  width:44px;height:44px;display:grid;place-items:center;border-radius:12px;
+  background:linear-gradient(180deg,#fff,rgba(255,255,255,.7));
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+  animation:ghostPulse 3.2s ease-in-out infinite;
 }
-@keyframes pulse{0%,100%{box-shadow:0 6px 18px rgba(226,74,39,.25)}50%{box-shadow:0 10px 26px rgba(226,74,39,.38)}}
-
-/* падающие листочки */
-.leaves{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.leaf{position:absolute;top:-10%;font-size:clamp(16px,2.2vw,24px);opacity:.85;filter:drop-shadow(0 6px 6px rgba(0,0,0,.15));
-  animation:fall var(--t,11s) linear var(--d,0s) infinite;transform:translateX(0) rotate(var(--r,0deg))}
-.leaf[data-t="1"]::before{content:"🍁"} .leaf[data-t="2"]::before{content:"🍂"} .leaf[data-t="3"]::before{content:"🍃"}
-@keyframes fall{
-  0%{transform:translateX(0) translateY(-10%) rotate(0deg);opacity:.95}
-  25%{transform:translateX(-6vw) translateY(25vh) rotate(60deg)}
-  50%{transform:translateX(5vw) translateY(50vh) rotate(140deg)}
-  75%{transform:translateX(-4vw) translateY(75vh) rotate(220deg)}
-  100%{transform:translateX(6vw) translateY(110vh) rotate(300deg);opacity:.9}
+@keyframes ghostPulse{0%,100%{transform:scale(1);box-shadow:0 8px 18px rgba(0,0,0,.10)}50%{transform:scale(1.04);box-shadow:0 10px 24px rgba(226,74,39,.18)}}
+.hero-title h1{
+  margin:0 0 4px; letter-spacing:.2px; line-height:1.15; font-size:clamp(20px,2vw + 11px,28px);
+  background:linear-gradient(180deg,#222 60%, #5a5a5a); -webkit-background-clip:text; background-clip:text; color:transparent;
 }
+.hero-title h1::after{content:""; display:block; height:2px; width:56px; margin-top:6px; background:linear-gradient(90deg, var(--brand), transparent); opacity:.85; border-radius:2px}
+.hero-meta{display:flex;align-items:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid rgba(0,0,0,.06);color:#444;font-size:.92em}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--brand);opacity:.75}
+.intro img.ready{ animation:introZoom 12s ease-out both }
+@keyframes introZoom{ from{transform:scale(1.035)} to{transform:scale(1)} }
 
 @media (max-width:560px){
   .intro{min-height:50vh;max-height:72vh;border-radius:16px}
-  .intro .panel{width:calc(100% - 18px);padding:12px;border-radius:12px;max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}
-  .intro h1{font-size:clamp(18px,5vw,21px);margin-bottom:4px}
+  .intro-modern .hero{width:calc(100% - 18px);padding:12px;border-radius:12px;max-height:58vh;overflow:auto;-webkit-overflow-scrolling:touch}
+  .hero-title h1{font-size:clamp(18px,5vw,22px)}
+  .chip{font-size:.9em;padding:5px 9px}
   .intro p,.intro blockquote{font-size:15px}
   .intro blockquote{padding:8px 10px}
   .intro blockquote::before{font-size:24px;top:-9px}
@@ -118,17 +119,29 @@ body.started  #introWrap{display:none!important}
 
 <!-- Интро -->
 <div class="intro-wrap" id="introWrap">
-  <section id="intro" class="intro">
+  <section id="intro" class="intro intro-modern">
     <figure><img id="introImg" alt="Осенний лес"></figure>
-    <!-- Листочки -->
-    <div class="leaves" aria-hidden="true"></div>
 
-    <div class="panel">
-      <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
+    <div class="panel hero">
+      <header class="hero-head">
+        <div class="ghost-badge" aria-hidden="true">👻</div>
+        <div class="hero-title">
+          <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
+          <div class="hero-meta">
+            <span class="chip">Осенний сезон</span>
+            <span class="dot" aria-hidden="true"></span>
+            <span class="chip">7 дней</span>
+          </div>
+        </div>
+      </header>
+
       <p>В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
       <blockquote>«Привет! Я живу здесь с прошлого сезона. Я люблю чай с облепихой, осенние листья и шаги по утренней росе. А ещё я немножко… прозрачный.»</blockquote>
       <p>Так все узнали про Привидение Осеннего Лагеря — Шагуню. Он не пугает, а помогает двигаться, греться и не грустить. Игра начинается: за неделю нужно найти Шагуню на всех локациях лагеря и выполнить его задания.</p>
-      <footer style="margin-top:10px"><button id="startBtn" class="btn" type="button">Начать игру</button></footer>
+
+      <footer style="margin-top:12px">
+        <button id="startBtn" class="btn" type="button">Начать игру</button>
+      </footer>
     </div>
   </section>
 </div>
@@ -256,7 +269,6 @@ preload(ASSETS.start).then(src=>{introImg.src=src;introImg.onload=()=>introImg.c
 
 /* === СТАРТ === */
 startBtn.onclick=()=>{
-  // конфетти добавляется отдельным обработчиком ниже
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
   startLevel(0);
@@ -307,13 +319,13 @@ function onFound(L, idx){
   setBgSmart(L.bgFound,L.bgFoundPos);
   setTimeout(hideLoader,300);
 
-  // готовим правую панель под уровень
+  // правую панель под уровень
   const titleEl = sidePanel.querySelector('h3');
   const paraEl  = sidePanel.querySelector('p');
 
   if(idx===0){
     // Уровень 1 — тексты как в оригинале
-    if(hintText) hintText.innerHTML = '🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.';
+    if(hintText) hintText.innerHTML = '🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку 2 минуты.';
   } else if(idx===1){
     // Уровень 2 — тексты по ТЗ
     if(titleEl) titleEl.textContent = 'Горячий какао';
@@ -378,83 +390,6 @@ nextBtn.onclick=()=>{
     showToast('Все уровни пройдены! 🎉',2000);
   }
 };
-</script>
-
-<!-- WOW-эффекты интро: параллакс, листья, конфетти -->
-<script>
-// Параллакс фона в интро
-(() => {
-  const img = document.getElementById('introImg');
-  const intro = document.getElementById('intro');
-  if(!img || !intro) return;
-  let raf;
-  function onMove(e){
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(()=> {
-      const r = intro.getBoundingClientRect();
-      const src = ('touches' in e && e.touches.length ? e.touches[0] : e);
-      const cx = (src.clientX ?? (r.left + r.width/2)) - r.left;
-      const cy = (src.clientY ?? (r.top  + r.height/2)) - r.top;
-      const x = ((cx / r.width)  - .5) * 10;
-      const y = ((cy / r.height) - .5) * 10;
-      img.style.transform = `scale(1.05) translate(${x}px, ${y}px)`;
-    });
-  }
-  intro.addEventListener('mousemove', onMove, {passive:true});
-  intro.addEventListener('touchmove', onMove, {passive:true});
-})();
-
-// Падающие листочки
-(() => {
-  const box = document.querySelector('.leaves');
-  if(!box) return;
-  const N = 14;
-  for (let i=0;i<N;i++){
-    const s = document.createElement('span');
-    s.className = 'leaf';
-    s.dataset.t = (i % 3) + 1;
-    s.style.left = Math.random()*100 + 'vw';
-    s.style.setProperty('--t', (9 + Math.random()*6) + 's');
-    s.style.setProperty('--d', (Math.random()*5) + 's');
-    s.style.setProperty('--r', (Math.random()*60 - 30) + 'deg');
-    box.appendChild(s);
-  }
-})();
-
-// Конфетти при клике «Начать игру»
-(() => {
-  const btn = document.getElementById('startBtn');
-  if(!btn) return;
-  btn.addEventListener('click', (e)=> {
-    const burst = document.createElement('div');
-    Object.assign(burst.style, {
-      position:'fixed', left:(e.clientX||window.innerWidth/2)+'px',
-      top:(e.clientY||window.innerHeight/2)+'px', pointerEvents:'none', zIndex:9999
-    });
-    document.body.appendChild(burst);
-    const n=80;
-    for(let i=0;i<n;i++){
-      const d=document.createElement('i');
-      const size = 4 + Math.random()*6;
-      const ang = Math.random()*Math.PI*2;
-      const vel = 3 + Math.random()*6;
-      d.style.position='absolute';
-      d.style.width=size+'px'; d.style.height=size+'px';
-      d.style.background = ['#e24a27','#FFBA08','#E85D04','#D9D9D9','#ffffff'][i%5];
-      d.style.borderRadius = (Math.random()>.5? '50%' : '2px');
-      d.style.transform = 'translate(0,0)';
-      d.style.opacity = '1';
-      burst.appendChild(d);
-      const tx = Math.cos(ang)*vel*20, ty = Math.sin(ang)*vel*18 - 10;
-      d.animate([
-        { transform:'translate(0,0) rotate(0deg)', opacity:1 },
-        { transform:`translate(${tx/2}px, ${ty/2}px) rotate(180deg)`, opacity:1 },
-        { transform:`translate(${tx}px, ${ty}px) rotate(360deg)`, opacity:0 }
-      ], { duration: 900 + Math.random()*300, easing:'cubic-bezier(.2,.6,.2,1)', fill:'forwards' });
-    }
-    setTimeout(()=> burst.remove(), 1200);
-  });
-})();
 </script>
 </body>
 </html>
