@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>ШАГАЙ ДОМА — Найди Привидение Осеннего Лагеря</title>
 <style>
 :root{--brand:#e24a27;--text:#222;--bg:#fff;--panel:#f7f8f9}
@@ -11,50 +11,31 @@ img{max-width:100%;display:block}
 button{cursor:pointer;background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:1rem;transition:.2s}
 button:hover{box-shadow:0 4px 14px rgba(226,74,39,.3);transform:translateY(-1px)}
 button[aria-disabled="true"]{opacity:.6;cursor:default;box-shadow:none;transform:none}
-
-/* состояния */
-body.prestart #hud,
-body.prestart #gameWrap { display: none !important; }
-body.started #introWrap { display: none !important; }
-
-/* Intro */
+body.prestart #hud,body.prestart #gameWrap{display:none!important}
+body.started #introWrap{display:none!important}
 .intro-wrap{max-width:960px;margin:0 auto;padding:20px}
 .intro{position:relative;overflow:hidden;border-radius:18px;background:#f1f2f3;box-shadow:0 10px 30px rgba(0,0,0,.08)}
 .intro figure{margin:0;position:absolute;inset:0}
 .intro img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
 .intro img.ready{opacity:1}
 .intro .panel{position:relative;padding:24px;background:rgba(255,255,255,.86);backdrop-filter:blur(6px)}
-.intro h1{margin:0 0 8px;font-size:1.8rem}
-.intro p{margin:10px 0;line-height:1.45}
 blockquote.msg{margin:14px 0;padding:10px 14px;background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 12px rgba(0,0,0,.06)}
 .msg-head{display:flex;align-items:center;gap:8px;font-size:.9em;color:#555;margin-bottom:4px}
 .msg-avatar{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#f6f7f9}
 .msg-author{font-weight:600;color:#222}
-.msg-dot{opacity:.6}
-.msg-time{opacity:.6}
-blockquote.msg p{margin:0;font-size:.97em}
-footer{text-align:right;margin-top:16px}
-
-/* HUD */
 .hud{position:sticky;top:0;background:#fff;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:10px;padding:8px 14px;z-index:10}
 .badge{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:20px;padding:6px 10px}
 .progress{flex:1;height:6px;background:#e0e0e0;border-radius:10px;overflow:hidden}
 .bar{height:100%;width:0;background:var(--brand);transition:width .3s}
-
-/* Game area */
 .play-wrap{max-width:1100px;margin:20px auto;display:flex;flex-wrap:wrap;gap:20px;padding:0 14px}
 .stage-wrap{flex:1 1 650px;min-width:320px}
 .stage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ddd center/cover no-repeat;box-shadow:0 10px 30px rgba(0,0,0,.1)}
 .layer{position:absolute;inset:0}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
-.dock{margin-top:8px;display:flex;justify-content:space-between;align-items:center}
 .side{flex:0 0 340px;background:var(--panel);border-radius:16px;padding:16px;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 20px rgba(0,0,0,.1);display:none}
-.side h3{margin:0 0 8px}
-.side p{margin:0 0 10px}
 .hint{background:#fff;border-radius:10px;border:1px dashed rgba(0,0,0,.2);padding:10px 12px;margin-bottom:10px}
-.btns{display:flex;gap:8px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;display:none}
-.loader{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.4);z-index:4}
+.loader{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.4);z-index:4;transition:opacity .2s}
 .ring{width:36px;height:36px;border-radius:50%;border:4px solid rgba(0,0,0,.1);border-top-color:var(--brand);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.4);z-index:20}
@@ -64,122 +45,108 @@ footer{text-align:right;margin-top:16px}
 </style>
 </head>
 <body class="prestart">
-
-<!-- Интро -->
 <div class="intro-wrap" id="introWrap">
-  <section id="intro" class="intro">
+  <section class="intro">
     <figure><img id="introImg" alt="Осенний лес"></figure>
     <div class="panel">
       <h1>Осенний лагерь «ШАГАЙ ДОМА»</h1>
-      <p>В лагере ШАГАЙ ДОМА осенью всегда происходят чудеса. Однажды в чат пришло странное сообщение от неизвестного участника:</p>
+      <p>Однажды в чат пришло сообщение от неизвестного участника:</p>
       <blockquote class="msg">
-        <div class="msg-head">
-          <span class="msg-avatar" aria-hidden="true">❔</span>
-          <span class="msg-author">Неизвестно</span>
-          <span class="msg-dot">•</span>
-          <time class="msg-time">сегодня</time>
-        </div>
-        <p>Привет! Я живу здесь с прошлого сезона. Я люблю чай с облепихой, осенние листья и шаги по утренней росе. А ещё я немножко… прозрачный.</p>
+        <div class="msg-head"><span class="msg-avatar">❔</span><span class="msg-author">Неизвестно</span></div>
+        <p>Привет! Я живу здесь с прошлого сезона. Люблю чай с облепихой, осенние листья и шаги по росе. И я немножко… прозрачный.</p>
       </blockquote>
-      <p>Так все узнали про Привидение Осеннего Лагеря — Шагуню. Он не пугает, а помогает двигаться, греться и не грустить. Игра начинается: за неделю нужно найти Шагуню на всех локациях лагеря и выполнить его задания.</p>
-      <footer><button id="startBtn" type="button">Начать игру</button></footer>
+      <p>Так узнали про Привидение Осеннего Лагеря — Шагуню. Он помогает двигаться и греться. Найди его на всех локациях лагеря и выполни задания!</p>
+      <footer><button id="startBtn">Начать игру</button></footer>
     </div>
   </section>
 </div>
 
-<!-- HUD -->
 <header class="hud" id="hud">
-  <div class="badge">Уровень: <span id="levelLabel" class="brand">1/3</span></div>
+  <div class="badge">Уровень: <span id="levelLabel">1/3</span></div>
   <div class="progress"><div id="progressBar" class="bar"></div></div>
 </header>
 
-<!-- Игра -->
 <section class="play-wrap" id="gameWrap">
   <div class="stage-wrap">
     <div id="stage" class="stage">
       <div id="bg" class="layer"></div>
       <div id="loader" class="loader" hidden><div class="ring"></div></div>
     </div>
-    <div class="dock">
-      <div id="levelTask" class="pill">Найди Шагуню на картинке</div>
-      <div class="pill">Очки: <span id="score">0</span></div>
-    </div>
+    <div class="pill" id="levelTask">Найди Шагуню на картинке</div>
+    <div class="pill">Очки: <span id="score">0</span></div>
   </div>
 
-  <aside id="sidePanel" class="side">
+  <aside class="side" id="sidePanel">
     <h3>Доброе утро!</h3>
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
-    <div class="hint">
-      <div id="hintText">🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.</div>
-    </div>
-    <div class="btns">
-      <button id="reportBtn" type="button">Отчитаться</button>
-      <button id="nextBtn" type="button" aria-disabled="true" style="background:#26a269">Следующий уровень</button>
-    </div>
+    <div class="hint"><div id="hintText">🎯 пройти 300 шагов или зарядка 2 минуты.</div></div>
+    <button id="reportBtn">Отчитаться</button>
+    <button id="nextBtn" aria-disabled="true" style="background:#26a269">Следующий уровень</button>
   </aside>
 </section>
 
-<!-- Модалка отчёта -->
-<section id="reportModal" class="modal">
+<section class="modal" id="reportModal">
   <div class="card">
     <h4>Отчёт по заданию</h4>
-    <div id="reportOptions">
-      <label><input type="radio" name="task" value="steps300"> Я прошёл(ла) 300 шагов</label><br/>
-      <label><input type="radio" name="task" value="warmup2m"> Я сделал(а) зарядку 2 минуты</label>
-    </div>
+    <div id="reportOptions"></div>
     <div class="actions">
-      <button id="cancelReport" type="button" style="background:#e7eaee;color:#222">Отмена</button>
-      <button id="submitReport" type="button">Готово</button>
+      <button id="cancelReport" style="background:#e7eaee;color:#222">Отмена</button>
+      <button id="submitReport">Готово</button>
     </div>
   </div>
 </section>
 
-<div id="toast" class="toast"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-const ASSETS = {
+const ASSETS={
   start:'start.jpg',
-  lvl1:'lvl1.jpg',       lvl1found:'lvl1found.jpg',
-  lvl2:'lvl2.jpg',       lvl2found:'lvl2found.jpg',
-  lvl3:'lvl3.jpg',       lvl3found:'lvl3found.jpg'
+  lvl1:'lvl1.jpg',lvl1found:'lvl1found.jpg',
+  lvl2:'lvl2.jpg',lvl2found:'lvl2found.jpg',
+  lvl3:'lvl3.jpg',lvl3found:'lvl3found.jpg'
 };
 
-const GAME_CONFIG = {
-  levels: [
-    {
-      bg: ASSETS.lvl1, bgFound: ASSETS.lvl1found,
-      hotspot:{x:97.25,y:53.8,w:3.4,h:11.5},
-      introTitle:'Доброе утро!', introText:'Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?',
-      taskText:'🎯 Задание: пройти 300 шагов или сделать зарядку на 2 минуты.',
-      options:[
-        ['steps300','Я прошёл(ла) 300 шагов'],
-        ['warmup2m','Я сделал(а) зарядку 2 минуты']
-      ]
-    },
-    {
-      bg: ASSETS.lvl2, bgFound: ASSETS.lvl2found,
-      hotspot:{x:73,y:66,w:7,h:10},
-      introTitle:'Минутка отдыха',
-      introText:'Фух… даже призракам нужен отдых! Иногда самое полезное — просто полежать и послушать, как шуршат листья. А потом, конечно, немного пошагать — чтобы не заснуть',
-      taskText:'🎯 Задание дня: спокойная прогулка 10–15 минут или разминка для спины и шеи.',
-      options:[
-        ['walk15','Спокойная прогулка 10–15 минут'],
-        ['stretch','Разминка для спины и шеи']
-      ]
-    },
-    {
-      bg: ASSETS.lvl3, bgFound: ASSETS.lvl3found,
-      hotspot:{x:80,y:70,w:5,h:9},
-      introTitle:'Горячий какао',
-      introText:'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
-      taskText:'🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
-      options:[
-        ['steps500','Я сделал(а) 500 шагов под музыку'],
-        ['march1m','Я пошагал(а) на месте 1 минуту']
-      ]
-    }
+const GAME_CONFIG={
+levels:[
+{
+  bg:ASSETS.lvl1,bgFound:ASSETS.lvl1found,
+  hotspot:{x:97.25,y:53.8,w:3.4,h:11.5},
+  introTitle:'Доброе утро!',
+  introText:'Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?',
+  taskText:'🎯 Задание: пройти 300 шагов или сделать зарядку 2 минуты.',
+  options:[
+    ['steps300','Я прошёл(ла) 300 шагов'],
+    ['warmup2m','Я сделал(а) зарядку 2 минуты']
   ]
-};
+},
+{
+  bg:ASSETS.lvl2,bgFound:ASSETS.lvl2found,
+  poly:[
+    [20.65,80.12],
+    [22.50,82.84],
+    [20.80,87.27],
+    [18.64,82.59]
+  ],
+  introTitle:'Минутка отдыха',
+  introText:'Фух… даже призракам нужен отдых! Иногда самое полезное — просто полежать и послушать, как шуршат листья. А потом, конечно, немного пошагать — чтобы не заснуть',
+  taskText:'🎯 Задание дня: спокойная прогулка 10–15 минут или разминка для спины и шеи.',
+  options:[
+    ['walk15','Спокойная прогулка 10–15 минут'],
+    ['stretch','Разминка для спины и шеи']
+  ]
+},
+{
+  bg:ASSETS.lvl3,bgFound:ASSETS.lvl3found,
+  hotspot:{x:80,y:70,w:5,h:9},
+  introTitle:'Горячий какао',
+  introText:'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
+  taskText:'🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
+  options:[
+    ['steps500','Я сделал(а) 500 шагов под музыку'],
+    ['march1m','Я пошагал(а) на месте 1 минуту']
+  ]
+}
+]};
 
 const $=s=>document.querySelector(s);
 const introImg=$('#introImg'),startBtn=$('#startBtn'),stage=$('#stage'),bgLayer=$('#bg');
@@ -190,32 +157,58 @@ const hintText=$('#hintText'),reportOptions=$('#reportOptions'),scoreEl=$('#scor
 const reportModal=$('#reportModal'),cancelReport=$('#cancelReport'),submitReport=$('#submitReport');
 let currentLevel=0,state={found:false,taskDone:false,score:0};
 
-function preload(s){return new Promise((r,j)=>{const i=new Image();i.onload=()=>r(s);i.onerror=()=>j(s);i.src=s;});}
-function setBg(url){bgLayer.style.opacity='0';setTimeout(()=>{bgLayer.style.backgroundImage=`url('${url}')`;bgLayer.style.backgroundSize='cover';bgLayer.style.backgroundPosition='center';bgLayer.style.opacity='1';},80);}
+function preload(src){
+  return new Promise((res)=>{
+    const img=new Image();img.decoding='async';
+    img.onload=()=>res(src);img.onerror=()=>res(src);
+    img.src=src;
+    if(img.complete)res(src);
+    setTimeout(()=>res(src),1200);
+  });
+}
+
+let loaderTimer=null;
+function showLoaderSmart(){
+  clearTimeout(loaderTimer);
+  loaderTimer=setTimeout(()=>{loader.hidden=false;},140);
+}
+function hideLoader(){
+  clearTimeout(loaderTimer);
+  loader.hidden=true;
+}
+
+function setBg(url){bgLayer.style.opacity='0';setTimeout(()=>{bgLayer.style.backgroundImage=`url('${url}')`;bgLayer.style.backgroundSize='cover';bgLayer.style.opacity='1';},80);}
 function showToast(m,t=1600){toast.textContent=m;toast.style.display='block';clearTimeout(showToast.tid);showToast.tid=setTimeout(()=>toast.style.display='none',t);}
 function clickPt(e){const r=stage.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*100,y:(e.clientY-r.top)/r.height*100};}
 function inside(p,r){return p.x>=r.x-r.w/2&&p.x<=r.x+r.w/2&&p.y>=r.y-r.h/2&&p.y<=r.y+r.h/2;}
-function showLoader(){loader.hidden=false;}
-function hideLoader(){loader.hidden=true;}
+function pointInPoly(pt,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];const inter=((yi>pt.y)!==(yj>pt.y))&&(pt.x<(xj-xi)*(pt.y-yi)/((yj-yi)||1e-6)+xi);if(inter)c=!c;}return c;}
 function updateHud(){const t=GAME_CONFIG.levels.length;levelLabel.textContent=`${currentLevel+1}/${t}`;const d=[...Array(t).keys()].filter(i=>localStorage.getItem(`lvl_done_${i}`)==='1').length;progressBar.style.width=(d/t*100)+'%';}
 
 preload(ASSETS.start).then(s=>{introImg.src=s;introImg.onload=()=>introImg.classList.add('ready');});
-
 startBtn.onclick=()=>{document.body.classList.remove('prestart');document.body.classList.add('started');let t=GAME_CONFIG.levels.length;state.score=0;for(let i=0;i<t;i++)if(localStorage.getItem(`lvl_done_${i}`)==='1')state.score+=100;scoreEl.textContent=state.score;startLevel(0);};
 
 async function startLevel(i){
   currentLevel=i;state.found=false;state.taskDone=false;
   sidePanel.style.display='none';levelTask.hidden=false;nextBtn.setAttribute('aria-disabled','true');updateHud();
   const L=GAME_CONFIG.levels[i];
-  showLoader();try{const s=await preload(L.bg);setBg(s);if(L.bgFound)preload(L.bgFound);}finally{hideLoader();}
+  showLoaderSmart();
+  try{const s=await preload(L.bg);setBg(s);if(L.bgFound)preload(L.bgFound);}finally{hideLoader();}
   levelTask.textContent='Найди Шагуню на картинке';
-  stage.onclick=e=>{if(state.found)return;const p=clickPt(e);if(e.shiftKey)console.log(`x:${p.x.toFixed(2)} y:${p.y.toFixed(2)}`);if(inside(p,L.hotspot))onFound(L,i);else showToast('Не здесь 😊');};
+  stage.onclick=e=>{
+    if(state.found)return;
+    const pt=clickPt(e);
+    if(e.shiftKey)console.log(`x:${pt.x.toFixed(2)} y:${pt.y.toFixed(2)}`);
+    let hit=false;
+    if(L.poly)hit=pointInPoly(pt,L.poly);else if(L.hotspot)hit=inside(pt,L.hotspot);
+    hit?onFound(L,i):showToast('Не здесь 😊');
+  };
 }
 
 function onFound(L,i){
-  state.found=true;showLoader();setBg(L.bgFound);setTimeout(hideLoader,250);
-  const h3=sidePanel.querySelector('h3'),p=sidePanel.querySelector('p');
-  h3.textContent=L.introTitle;p.textContent=L.introText;hintText.innerHTML=L.taskText;
+  state.found=true;showLoaderSmart();setBg(L.bgFound);setTimeout(hideLoader,250);
+  sidePanel.querySelector('h3').textContent=L.introTitle;
+  sidePanel.querySelector('p').textContent=L.introText;
+  hintText.innerHTML=L.taskText;
   reportOptions.innerHTML=L.options.map(o=>`<label><input type="radio" name="task" value="${o[0]}"> ${o[1]}</label><br/>`).join('');
   levelTask.hidden=true;sidePanel.style.display='block';
 }
