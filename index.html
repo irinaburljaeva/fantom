@@ -12,7 +12,6 @@ button{cursor:pointer;background:var(--brand);color:#fff;border:none;border-radi
 button:hover{box-shadow:0 4px 14px rgba(226,74,39,.3);transform:translateY(-1px)}
 button[aria-disabled="true"]{opacity:.6;cursor:default;box-shadow:none;transform:none}
 
-/* состояния */
 body.prestart #hud, body.prestart #gameWrap{display:none!important}
 body.started #introWrap{display:none!important}
 
@@ -43,7 +42,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 .stage-wrap{flex:1 1 650px;min-width:320px}
 .stage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ddd center/cover no-repeat;box-shadow:0 10px 30px rgba(0,0,0,.1)}
 .layer{position:absolute;inset:0}
-/* Сдвиг найденного кадра для lvl2found, чтобы Шагуня был в кадре */
+/* сдвигаем найденный кадр для lvl2found вниз */
 .layer[style*="lvl2found.jpg"]{background-position:center 25% !important;}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
 .dock{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
@@ -54,7 +53,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 .hint{background:#fff;border-radius:10px;border:1px dashed rgba(0,0,0,.2);padding:10px 12px;margin-bottom:10px}
 
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;display:none}
-.loader{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.4);z-index:4}
+.loader{position:absolute;inset:0;display:none;place-items:center;background:rgba(255,255,255,.4);z-index:4}
 .ring{width:36px;height:36px;border-radius:50%;border:4px solid rgba(0,0,0,.1);border-top-color:var(--brand);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -105,7 +104,7 @@ blockquote.msg p{margin:0;font-size:.97em}
     <div id="stage" class="stage">
       <div id="bg" class="layer"></div>
       <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
-      <div id="loader" class="loader" hidden><div class="ring"></div></div>
+      <div id="loader" class="loader"><div class="ring"></div></div>
     </div>
     <div class="dock">
       <div id="levelTask" class="pill">Найди Шагуню на картинке</div>
@@ -166,7 +165,7 @@ const GAME_CONFIG = {
         ['warmup2m','Я сделал(а) зарядку 2 минуты']
       ]
     },
-    /* Уровень 2 — шезлонги (полигон по твоим координатам) */
+    /* Уровень 2 — шезлонги (полигон по координатам) */
     {
       bg: ASSETS.lvl2, bgFound: ASSETS.lvl2found,
       poly: [
@@ -212,31 +211,40 @@ const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitRepo
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
 
-/* ===== ЛОАДЕР + ПРЕЛОАД ===== */
-// грузим картинку и скрываем индикатор сразу после установки фона
+/* ===== ПРЕЛОАД + ЛОАДЕР (без гонок) ===== */
 function preload(src){
   return new Promise((resolve)=>{
-    const img = new Image();
-    img.onload = () => resolve(src);
-    img.onerror = () => resolve(src);
-    img.src = src;
-    if (img.complete) resolve(src);
+    const img=new Image();
+    img.onload=()=>resolve(src);
+    img.onerror=()=>resolve(src);
+    img.src=src;
+    if(img.complete) resolve(src);
   });
 }
-let loaderTimer;
-function showLoaderSmart(){ clearTimeout(loaderTimer); loaderTimer = setTimeout(()=> loader.hidden=false, 150); }
-function hideLoaderImmediate(){ clearTimeout(loaderTimer); loader.hidden = true; }
+
+// защита от «опоздавших» показов/скрытий
+let loadSeq = 0;
+function showLoader(seq){
+  if(seq !== loadSeq) return;
+  loader.style.display = 'grid';
+}
+function hideLoader(seq){
+  if(seq !== loadSeq) return;
+  // скрываем после того, как браузер реально применил фон
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    loader.style.display = 'none';
+  }));
+}
 
 /* ===== УТИЛИТЫ ===== */
 function setBg(url){
   bgLayer.style.opacity='0';
-  // чуть отложим, чтобы CSS успел примениться
-  setTimeout(()=>{ 
+  setTimeout(()=>{
     bgLayer.style.backgroundImage=`url('${url}')`;
     bgLayer.style.backgroundSize='cover';
     bgLayer.style.backgroundPosition='center';
     bgLayer.style.opacity='1';
-  }, 60);
+  }, 20);
 }
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
 function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 }; }
@@ -285,11 +293,14 @@ async function startLevel(i){
 
   const L = GAME_CONFIG.levels[i];
 
-  showLoaderSmart();
+  // новая последовательность показа лоадера
+  const seq = ++loadSeq;
+  showLoader(seq);
   const src = await preload(L.bg);
+  if (seq !== loadSeq) return; // защищаемся от гонки
   setBg(src);
   if (L.bgFound) preload(L.bgFound);
-  hideLoaderImmediate();
+  hideLoader(seq);
 
   levelTask.textContent = 'Найди Шагуню на картинке';
 
@@ -308,12 +319,17 @@ async function startLevel(i){
 }
 
 /* ===== НАЙДЕНО ===== */
-function onFound(L, idx){
+async function onFound(L, idx){
   state.found = true;
 
-  showLoaderSmart();
-  setBg(L.bgFound);
-  setTimeout(hideLoaderImmediate, 180);
+  const seq = ++loadSeq;
+  showLoader(seq);
+  // картинка «после нахождения» уже, скорее всего, в кэше,
+  // но всё равно ждём preload для честности
+  const src = await preload(L.bgFound);
+  if (seq !== loadSeq) return;
+  setBg(src);
+  hideLoader(seq);
 
   // контент панели
   sidePanel.querySelector('h3').textContent = L.introTitle;
