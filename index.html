@@ -370,10 +370,19 @@ async function onFound(L, idx){
   levelTask.hidden = true;
   sidePanel.style.display = 'block';
 
-  // 💖
+  // 💖 анимация
   celebrate.style.display='grid';
-  const h=celebrate.firstElementChild; h.style.animation='none'; void h.offsetWidth; h.style.animation='';
+  const h=celebrate.firstElementChild; 
+  h.style.animation='none'; void h.offsetWidth; h.style.animation='';
   setTimeout(()=>celebrate.style.display='none',1200);
+
+  // если это финальный уровень — скрываем кнопку "Следующий"
+  const last = GAME_CONFIG.levels.length - 1;
+  if (idx === last) {
+    nextBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'inline-block';
+  }
 }
 
 /* ===== ОТЧЁТ ===== */
