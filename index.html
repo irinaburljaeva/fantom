@@ -60,10 +60,27 @@ blockquote.msg p{margin:0;font-size:.97em}
 .heart{font-size:60px;opacity:0;transform:scale(.7);animation:pop 1.2s ease forwards}
 @keyframes pop{0%{opacity:0;transform:scale(.7) translateY(20px)}50%{opacity:1;transform:scale(1) translateY(-4px)}100%{opacity:0;transform:scale(1.15) translateY(-24px)}}
 
-.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.4);z-index:20}
-.card{background:#fff;border-radius:14px;padding:16px;width:min(520px,92vw)}
-.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-@media(max-width:700px){.side{flex:1 1 100%}}
+/* --- EMBED/SMALL SCREEN FIXES --- */
+html, body { overflow-x: hidden; }              /* запрет горизонтального скролла */
+.play-wrap { padding: 0 10px 96px; }            /* запас снизу под нижнюю панель хоста */
+.stage { width: 100%; }
+.dock { flex-wrap: nowrap; gap: 8px; }
+.dock .pill { white-space: nowrap; }
+.btns button { min-width: 140px; }
+
+@media (max-width: 900px) {
+  .play-wrap { flex-direction: column; gap: 12px; }
+  .stage-wrap { flex: 1 1 auto; min-width: 0; }
+  .stage { max-height: calc(var(--vh, 1vh) * 100 - 230px); }
+  .side { display: block; order: 2; padding: 12px; }
+  .side .btns { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .side .btns button { width: 100%; }
+  .hud { position: sticky; top: 0; z-index: 5; }
+}
+
+@media (max-width: 600px) {
+  .play-wrap { padding-bottom: 120px; }
+}
 </style>
 </head>
 <body class="prestart">
@@ -195,7 +212,7 @@ const GAME_CONFIG = {
         ['march1m','Пошагать 1 минуту']
       ]
     },
-    // 4 — по ТВОЕМУ ТЕКСТУ, полигон и сдвиг найденного фона вниз
+    // 4 — твой текст, полигон, сдвиг найденного фона вниз
     {
       bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
       poly: [
@@ -311,10 +328,10 @@ startBtn.onclick=()=>{
   for(let i=0;i<total;i++) if(localStorage.getItem(`level_done_${i}`)==='1') state.score += 100;
   scoreEl.textContent = state.score;
 
-  // ➕ ПРОДОЛЖЕНИЕ С СОХРАНЁННОГО УРОВНЯ
+  // продолжение с сохранённого уровня
   let saved = parseInt(localStorage.getItem('current_level') || '0', 10);
   if (!Number.isFinite(saved) || saved < 0) saved = 0;
-  if (saved >= total) saved = 0; // если прошли всё — начинаем сначала
+  if (saved >= total) saved = 0;
   startLevel(saved);
 };
 
@@ -327,7 +344,7 @@ async function startLevel(i){
   nextBtn.setAttribute('aria-disabled','true');
   updateHud();
 
-  // ➕ СОХРАНЯЕМ ТЕКУЩИЙ УРОВЕНЬ (чтобы после перерыва вернуться в него)
+  // сохраняем текущий уровень, чтобы вернуться сюда после паузы
   localStorage.setItem('current_level', i);
 
   const L = GAME_CONFIG.levels[i];
@@ -406,7 +423,7 @@ submitReport.onclick = () => {
     state.score += 100; scoreEl.textContent = state.score;
   }
 
-  // ➕ СОХРАНЯЕМ СЛЕДУЮЩИЙ УРОВЕНЬ ДЛЯ ПРОДОЛЖЕНИЯ ПОСЛЕ ПЕРЕРЫВА
+  // сохраняем следующий уровень для продолжения после перерыва
   localStorage.setItem('current_level', currentLevel + 1);
 
   reportModal.style.display = 'none';
@@ -425,6 +442,12 @@ nextBtn.onclick = () => {
     showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
   }
 };
+
+/* корректный vh на мобильных, чтобы max-height сцены учитывал реальные панели браузера */
+function setVh(){ document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`); }
+window.addEventListener('resize', setVh);
+window.addEventListener('orientationchange', setVh);
+setVh();
 </script>
 </body>
 </html>
