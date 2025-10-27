@@ -311,7 +311,11 @@ startBtn.onclick=()=>{
   for(let i=0;i<total;i++) if(localStorage.getItem(`level_done_${i}`)==='1') state.score += 100;
   scoreEl.textContent = state.score;
 
-  startLevel(0);
+  // ➕ ПРОДОЛЖЕНИЕ С СОХРАНЁННОГО УРОВНЯ
+  let saved = parseInt(localStorage.getItem('current_level') || '0', 10);
+  if (!Number.isFinite(saved) || saved < 0) saved = 0;
+  if (saved >= total) saved = 0; // если прошли всё — начинаем сначала
+  startLevel(saved);
 };
 
 /* ===== ЗАПУСК УРОВНЯ ===== */
@@ -322,6 +326,9 @@ async function startLevel(i){
   levelTask.hidden = false;
   nextBtn.setAttribute('aria-disabled','true');
   updateHud();
+
+  // ➕ СОХРАНЯЕМ ТЕКУЩИЙ УРОВЕНЬ (чтобы после перерыва вернуться в него)
+  localStorage.setItem('current_level', i);
 
   const L = GAME_CONFIG.levels[i];
 
@@ -398,6 +405,9 @@ submitReport.onclick = () => {
     localStorage.setItem(`level_done_${currentLevel}`,'1');
     state.score += 100; scoreEl.textContent = state.score;
   }
+
+  // ➕ СОХРАНЯЕМ СЛЕДУЮЩИЙ УРОВЕНЬ ДЛЯ ПРОДОЛЖЕНИЯ ПОСЛЕ ПЕРЕРЫВА
+  localStorage.setItem('current_level', currentLevel + 1);
 
   reportModal.style.display = 'none';
   nextBtn.removeAttribute('aria-disabled');
