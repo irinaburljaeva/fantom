@@ -48,7 +48,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 /* magnifier */
 .tool-btn{background:#fff;color:var(--text);border:1px solid rgba(0,0,0,.12);padding:8px 12px;border-radius:10px}
 .tool-btn[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 2px rgba(226,74,39,.15)}
-.lens{position:absolute;top:0;left:0;width:140px;height:140px;border-radius:50%;border:3px solid rgba(0,0,0,.25);box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;display:none;z-index:5;background-repeat:no-repeat;backdrop-filter:none}
+.lens{position:absolute;top:0;left:0;width:150px;height:150px;border-radius:50%;border:3px solid rgba(0,0,0,.25);box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;display:none;z-index:5;background-repeat:no-repeat;background-color:transparent}
 
 /* side panel */
 .side{flex:0 0 340px;background:var(--panel);border-radius:16px;padding:16px;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 20px rgba(0,0,0,.1);display:none}
@@ -163,80 +163,45 @@ const ASSETS = {
 /* ===== КОНФИГ УРОВНЕЙ ===== */
 const GAME_CONFIG = {
   levels: [
-    // 1
-    {
+    { // 1
       bg: ASSETS.lvl1, bgFound: ASSETS.lvl1found,
       hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
       introTitle: 'Доброе утро!',
       introText: 'Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?',
       taskText: '🎯 Задание: пройти 300 шагов или сделать разминку на 2 минуты.',
-      options: [
-        ['steps300','Я прошёл(ла) 300 шагов'],
-        ['warmup2m','Я сделал(а) зарядку 2 минуты']
-      ]
+      options: [['steps300','Я прошёл(ла) 300 шагов'],['warmup2m','Я сделал(а) зарядку 2 минуты']]
     },
-    // 2 — шезлонги (полигон) + опускаем найденное изображение
-    {
+    { // 2 — шезлонги
       bg: ASSETS.lvl2, bgPos: 'center', bgFound: ASSETS.lvl2found, bgFoundPos: 'center 60%',
-      poly: [
-        [20.65, 80.12],
-        [22.50, 82.84],
-        [20.80, 87.27],
-        [18.64, 82.59]
-      ],
+      poly: [[20.65,80.12],[22.50,82.84],[20.80,87.27],[18.64,82.59]],
       introTitle: 'Минутка отдыха',
       introText: 'Фух… даже призракам нужен отдых! Иногда самое полезное — просто полежать и послушать, как шуршат листья. А потом, конечно, немного пошагать — чтобы не заснуть',
       taskText: '🎯 Задание дня: спокойная прогулка 10–15 минут или разминка для спины и шеи.',
-      options: [
-        ['walk15','Спокойная прогулка 10–15 минут'],
-        ['stretch','Разминка для спины и шеи']
-      ]
+      options: [['walk15','Спокойная прогулка 10–15 минут'],['stretch','Разминка для спины и шеи']]
     },
-    // 3 — столовая / какао
-    {
+    { // 3 — столовая
       bg: ASSETS.lvl3, bgFound: ASSETS.lvl3found,
       hotspot: { x: 80, y: 70, w: 5, h: 9 },
       introTitle: 'Горячий какао',
       introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
       taskText: '🎯 Задание: сделать 1000 шагов под музыку или пошагать на месте 10 минут.',
-      options: [
-        ['steps500','500 шагов под музыку'],
-        ['march1m','Пошагать 1 минуту']
-      ]
+      options: [['steps500','500 шагов под музыку'],['march1m','Пошагать 1 минуту']]
     },
-    // 4 — сдвиг найденного фона вниз
-    {
+    { // 4 — зарядка
       bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
-      poly: [
-        [28.59, 91.35],
-        [28.50, 96.73],
-        [26.86, 93.96],
-        [29.86, 93.82]
-      ],
+      poly: [[28.59,91.35],[28.50,96.73],[26.86,93.96],[29.86,93.82]],
       introTitle: 'В здоровом теле — здоровый дух!',
       introText: 'Даже призраки делают зарядку, а вы? Уже размялись?',
       taskText: '🎯 Задания: зарядка от Димы — или 15 минут мягкой растяжки всего тела.',
-      options: [
-        ['dima_warmup','Зарядка от Димы'],
-        ['stretch5','15 минут мягкой растяжки']
-      ]
+      options: [['dima_warmup','Зарядка от Димы'],['stretch5','15 минут мягкой растяжки']]
     },
-    // 5 — финальный
-    {
+    { // 5 — финал
       bg: ASSETS.lvl5, bgFound: ASSETS.lvl5found,
-      poly: [
-        [72.73,63.61],
-        [74.27,67.80],
-        [72.57,73.22],
-        [71.03,67.80]
-      ],
+      poly: [[72.73,63.61],[74.27,67.80],[72.57,73.22],[71.03,67.80]],
       introTitle: 'Финал! Шагуня найден',
       introText: 'Вы прошли все локации лагеря и ни разу не испугись! Шагуня благодарит за компанию.',
       taskText: '🎯 Задание финального дня: 45 минут прогулки на свежем воздухе или любимая тренировка целиком.',
-      options: [
-        ['walk10','Прогулка 45 минут'],
-        ['favworkout','Любимая тренировка целиком']
-      ]
+      options: [['walk10','Прогулка 45 минут'],['favworkout','Любимая тренировка целиком']]
     }
   ]
 };
@@ -249,41 +214,35 @@ const sidePanel=$('#sidePanel'), levelTask=$('#levelTask');
 const levelLabel=$('#levelLabel'), progressBar=$('#progressBar');
 const reportBtn=$('#reportBtn'), nextBtn=$('#nextBtn'), toast=$('#toast');
 const hintText=$('#hintText'), reportOptions=$('#reportOptions'), scoreEl=$('#score');
+const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
 
 /* magnifier DOM */
 const zoomBtn=$('#zoomBtn'), lens=$('#lens');
 
-const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
-
 /* ===== СОСТОЯНИЕ ===== */
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
-let zoomOn = false;
-let currentBgSrc = '';
-let currentBgPos = 'center';
+let currentBgSrc = '', currentBgPos = 'center';
+let naturalW = 0, naturalH = 0; // естественные размеры текущего изображения
+const ZOOM = 2.2;
 
 /* ===== ПРЕЛОАД + ЛОАДЕР ===== */
 function preload(src){
   return new Promise((resolve)=>{
     const img=new Image();
-    img.onload=()=>resolve(src);
-    img.onerror=()=>resolve(src);
+    img.onload=()=>resolve({src,width:img.naturalWidth,height:img.naturalHeight});
+    img.onerror=()=>resolve({src,width:0,height:0});
     img.src=src;
-    if(img.complete) resolve(src);
+    if(img.complete) resolve({src,width:img.naturalWidth,height:img.naturalHeight});
   });
 }
 let loadSeq = 0;
 function showLoader(seq){ if(seq !== loadSeq) return; loader.style.display = 'grid'; }
-function hideLoader(seq){
-  if(seq !== loadSeq) return;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display = 'none'; }));
-}
+function hideLoader(seq){ if(seq !== loadSeq) return; requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display = 'none'; })); }
 
 /* ===== УТИЛИТЫ ===== */
 function setBg(url, pos='center'){
-  currentBgSrc = url;
-  currentBgPos = pos;
-  // апдейтим фон основного слоя
+  currentBgSrc = url; currentBgPos = pos;
   bgLayer.style.opacity='0';
   setTimeout(()=>{
     bgLayer.style.backgroundImage=`url('${url}')`;
@@ -291,9 +250,8 @@ function setBg(url, pos='center'){
     bgLayer.style.backgroundPosition=pos;
     bgLayer.style.opacity='1';
   }, 20);
-  // апдейтим фон лупы
+  // обновим фон лупы (без размеров — размеры считаем при движении)
   lens.style.backgroundImage = `url('${url}')`;
-  updateLensBackgroundSize(); // подстроить масштаб
 }
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
 function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100, rect:r }; }
@@ -315,23 +273,23 @@ function updateHud(){
 }
 
 /* ===== ИНТРО ===== */
-preload(ASSETS.start).then(src=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); });
+preload(ASSETS.start).then(({src})=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); });
 
 /* ===== СТАРТ ===== */
 startBtn.onclick=()=>{
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
 
-  // восстановление очков из level_done_*
+  // восстановление очков
   const total = GAME_CONFIG.levels.length;
   state.score = 0;
   for(let i=0;i<total;i++) if(localStorage.getItem(`level_done_${i}`)==='1') state.score += 100;
   scoreEl.textContent = state.score;
 
-  // ➕ ПРОДОЛЖЕНИЕ С СОХРАНЁННОГО УРОВНЯ
+  // продолжить с сохранённого уровня
   let saved = parseInt(localStorage.getItem('current_level') || '0', 10);
   if (!Number.isFinite(saved) || saved < 0) saved = 0;
-  if (saved >= total) saved = 0; // если прошли всё — начинаем сначала
+  if (saved >= total) saved = 0;
   startLevel(saved);
 };
 
@@ -344,15 +302,15 @@ async function startLevel(i){
   nextBtn.setAttribute('aria-disabled','true');
   updateHud();
 
-  // ➕ СОХРАНЯЕМ ТЕКУЩИЙ УРОВЕНЬ
   localStorage.setItem('current_level', i);
 
   const L = GAME_CONFIG.levels[i];
 
   const seq = ++loadSeq;
   showLoader(seq);
-  const src = await preload(L.bg);
+  const {src,width,height} = await preload(L.bg);
   if (seq !== loadSeq) return;
+  naturalW = width; naturalH = height;
   setBg(src, L.bgPos || 'center');
   if (L.bgFound) preload(L.bgFound);
   hideLoader(seq);
@@ -373,15 +331,35 @@ async function startLevel(i){
   };
 }
 
+/* ===== cover-геометрия для лупы =====
+   Возвращает размеры вписанного (cover) изображения и смещения внутри сцены */
+function coverGeometry(containerW, containerH, imgW, imgH){
+  if(!imgW || !imgH) return {w:containerW,h:containerH,offX:0,offY:0};
+  const rC = containerW / containerH;
+  const rI = imgW / imgH;
+  let w,h;
+  if(rC > rI){ // шире контейнер: растягиваем по ширине
+    w = containerW;
+    h = w / rI;
+  }else{       // выше контейнер: растягиваем по высоте
+    h = containerH;
+    w = h * rI;
+  }
+  const offX = (containerW - w)/2;
+  const offY = (containerH - h)/2;
+  return {w,h,offX,offY};
+}
+
 /* ===== НАЙДЕНО ===== */
 async function onFound(L, idx){
   state.found = true;
 
   const seq = ++loadSeq;
   showLoader(seq);
-  const src = await preload(L.bgFound);
+  const found = await preload(L.bgFound);
   if (seq !== loadSeq) return;
-  setBg(src, L.bgFoundPos || 'center');
+  naturalW = found.width; naturalH = found.height; // для лупы после смены картинки
+  setBg(found.src, L.bgFoundPos || 'center');
   hideLoader(seq);
 
   sidePanel.querySelector('h3').textContent = L.introTitle;
@@ -394,19 +372,12 @@ async function onFound(L, idx){
   levelTask.hidden = true;
   sidePanel.style.display = 'block';
 
-  // 💖 анимация
   celebrate.style.display='grid';
-  const h=celebrate.firstElementChild; 
-  h.style.animation='none'; void h.offsetWidth; h.style.animation='';
+  const h=celebrate.firstElementChild; h.style.animation='none'; void h.offsetWidth; h.style.animation='';
   setTimeout(()=>celebrate.style.display='none',1200);
 
-  // если это финальный уровень — скрываем кнопку "Следующий"
   const last = GAME_CONFIG.levels.length - 1;
-  if (idx === last) {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'inline-block';
-  }
+  nextBtn.style.display = (idx === last) ? 'none' : 'inline-block';
 }
 
 /* ===== ОТЧЁТ ===== */
@@ -415,15 +386,12 @@ cancelReport.onclick = () => reportModal.style.display = 'none';
 submitReport.onclick = () => {
   const sel = document.querySelector('input[name="task"]:checked');
   if(!sel){ showToast('Выбери, что выполнишь 🙂'); return; }
-
   state.taskDone = true;
 
   if(localStorage.getItem(`level_done_${currentLevel}`)!=='1'){
     localStorage.setItem(`level_done_${currentLevel}`,'1');
     state.score += 100; scoreEl.textContent = state.score;
   }
-
-  // ➕ СОХРАНЯЕМ СЛЕДУЮЩИЙ УРОВЕНЬ ДЛЯ ПРОДОЛЖЕНИЯ ПОСЛЕ ПЕРЕРЫВА
   localStorage.setItem('current_level', currentLevel + 1);
 
   reportModal.style.display = 'none';
@@ -436,61 +404,59 @@ submitReport.onclick = () => {
 nextBtn.onclick = () => {
   if(!state.taskDone){ showToast('Сначала выполни задание от Шагуни 🙃', 2000); return; }
   const last = GAME_CONFIG.levels.length - 1;
-  if(currentLevel < last){
-    startLevel(currentLevel + 1);
-  }else{
-    showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
-  }
+  if(currentLevel < last) startLevel(currentLevel + 1);
+  else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА ===== */
-const ZOOM = 2.2; // коэффициент увеличения
-function updateLensBackgroundSize(){
-  // размер фона лупы в пикселях соответствует увеличенному слою stage
-  const r = stage.getBoundingClientRect();
-  lens.style.backgroundSize = `${ZOOM*100}% ${ZOOM*100}%`;
-}
+/* ===== ЛУПА (точное совпадение с cover) ===== */
+let zoomOn=false;
 function moveLens(clientX, clientY){
   if(!zoomOn) return;
   const r = stage.getBoundingClientRect();
-  let x = clientX - r.left;
-  let y = clientY - r.top;
-  // ограничим в пределах сцены
-  x = Math.max(0, Math.min(r.width, x));
-  y = Math.max(0, Math.min(r.height, y));
+  let x = Math.max(0, Math.min(r.width,  clientX - r.left));
+  let y = Math.max(0, Math.min(r.height, clientY - r.top));
 
+  // позиция самОй лупы
   const lx = x - lens.offsetWidth/2;
   const ly = y - lens.offsetHeight/2;
   lens.style.transform = `translate(${lx}px, ${ly}px)`;
 
-  // позиционирование фона лупы в процентах
-  const px = (x / r.width) * 100;
-  const py = (y / r.height) * 100;
-  lens.style.backgroundPosition = `${px}% ${py}%`;
+  // вычисляем размеры вписанного фонового изображения (cover)
+  const geom = coverGeometry(r.width, r.height, naturalW, naturalH);
+
+  // координаты курсора внутри реального изображения
+  const imgX = (x - geom.offX) / geom.w; // 0..1
+  const imgY = (y - geom.offY) / geom.h; // 0..1
+
+  // фон лупы: увеличить то же изображение с тем же cover-размером, но умноженным на ZOOM
+  lens.style.backgroundSize = `${geom.w*ZOOM}px ${geom.h*ZOOM}px`;
+
+  // позиционируем фон так, чтобы точка под курсором совпадала
+  const posX = (imgX*geom.w*ZOOM - x) + lx + lens.offsetWidth/2;
+  const posY = (imgY*geom.h*ZOOM - y) + ly + lens.offsetHeight/2;
+
+  // переводим в пиксели относительно самой лупы
+  lens.style.backgroundPosition = `-${posX}px -${posY}px`;
 }
+
 zoomBtn.addEventListener('click', ()=>{
   zoomOn = !zoomOn;
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
   lens.style.display = zoomOn ? 'block' : 'none';
   if(zoomOn){
-    updateLensBackgroundSize();
+    // на включении сразу выставим фон
+    const r = stage.getBoundingClientRect();
+    const centerX = r.left + r.width/2;
+    const centerY = r.top  + r.height/2;
+    moveLens(centerX, centerY);
   }
 });
 stage.addEventListener('mousemove', e=> moveLens(e.clientX, e.clientY));
-stage.addEventListener('touchmove', e=>{
-  if(!zoomOn) return;
-  const t = e.touches[0];
-  moveLens(t.clientX, t.clientY);
-}, {passive:true});
-stage.addEventListener('touchstart', e=>{
-  if(!zoomOn) return;
-  const t = e.touches[0];
-  lens.style.display='block';
-  moveLens(t.clientX, t.clientY);
-}, {passive:true});
 stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lens.style.display='none'; });
 stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lens.style.display='block'; });
-window.addEventListener('resize', ()=>{ if(zoomOn) updateLensBackgroundSize(); });
+stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lens.style.display='block'; moveLens(t.clientX,t.clientY); }, {passive:true});
+stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; moveLens(t.clientX,t.clientY); }, {passive:true});
+window.addEventListener('resize', ()=>{ if(zoomOn){ const r=stage.getBoundingClientRect(); moveLens(r.left+r.width/2, r.top+r.height/2); }});
 </script>
 </body>
 </html>
