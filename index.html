@@ -250,7 +250,6 @@ function setBg(url, pos='center'){
     bgLayer.style.backgroundPosition=pos;
     bgLayer.style.opacity='1';
   }, 20);
-  // обновим фон лупы (без размеров — размеры считаем при движении)
   lens.style.backgroundImage = `url('${url}')`;
 }
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
@@ -293,6 +292,36 @@ startBtn.onclick=()=>{
   startLevel(saved);
 };
 
+/* ===== Парсер background-position ===== */
+function parseBgPos(pos){
+  // возвращает коэффициенты 0..1 для X/Y
+  let x='50%', y='50%';
+  if(typeof pos==='string'){
+    const parts = pos.trim().split(/\s+/);
+    if(parts.length===1){ x = parts[0]; y='50%'; }
+    else { x = parts[0]; y = parts[1]; }
+  }
+  const map = {left:'0%', top:'0%', center:'50%', right:'100%', bottom:'100%'};
+  x = map[x] || x; y = map[y] || y;
+  const toF = v => (String(v).endsWith('%') ? parseFloat(v)/100 : 0.5);
+  return {px:toF(x), py:toF(y)};
+}
+
+/* ===== Геометрия cover с учётом позиции ===== */
+function coverGeometryWithPos(containerW, containerH, imgW, imgH, posStr){
+  if(!imgW || !imgH) return {w:containerW,h:containerH,offX:0,offY:0};
+  const {px,py} = parseBgPos(posStr||'50% 50%');
+  const rC = containerW / containerH;
+  const rI = imgW / imgH;
+  let w,h;
+  if(rC > rI){ w = containerW; h = w / rI; }
+  else{ h = containerH; w = h * rI; }
+  // смещения рассчитываются по спецификации: (контейнер - изображение) * процент
+  const offX = (containerW - w) * px;
+  const offY = (containerH - h) * py;
+  return {w,h,offX,offY};
+}
+
 /* ===== ЗАПУСК УРОВНЯ ===== */
 async function startLevel(i){
   currentLevel = i;
@@ -331,25 +360,6 @@ async function startLevel(i){
   };
 }
 
-/* ===== cover-геометрия для лупы =====
-   Возвращает размеры вписанного (cover) изображения и смещения внутри сцены */
-function coverGeometry(containerW, containerH, imgW, imgH){
-  if(!imgW || !imgH) return {w:containerW,h:containerH,offX:0,offY:0};
-  const rC = containerW / containerH;
-  const rI = imgW / imgH;
-  let w,h;
-  if(rC > rI){ // шире контейнер: растягиваем по ширине
-    w = containerW;
-    h = w / rI;
-  }else{       // выше контейнер: растягиваем по высоте
-    h = containerH;
-    w = h * rI;
-  }
-  const offX = (containerW - w)/2;
-  const offY = (containerH - h)/2;
-  return {w,h,offX,offY};
-}
-
 /* ===== НАЙДЕНО ===== */
 async function onFound(L, idx){
   state.found = true;
@@ -358,7 +368,7 @@ async function onFound(L, idx){
   showLoader(seq);
   const found = await preload(L.bgFound);
   if (seq !== loadSeq) return;
-  naturalW = found.width; naturalH = found.height; // для лупы после смены картинки
+  naturalW = found.width; naturalH = found.height;
   setBg(found.src, L.bgFoundPos || 'center');
   hideLoader(seq);
 
@@ -408,7 +418,7 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА (точное совпадение с cover) ===== */
+/* ===== ЛУПА: точное совпадение с cover + background-position ===== */
 let zoomOn=false;
 function moveLens(clientX, clientY){
   if(!zoomOn) return;
@@ -416,26 +426,29 @@ function moveLens(clientX, clientY){
   let x = Math.max(0, Math.min(r.width,  clientX - r.left));
   let y = Math.max(0, Math.min(r.height, clientY - r.top));
 
-  // позиция самОй лупы
+  // позиция самой лупы
   const lx = x - lens.offsetWidth/2;
   const ly = y - lens.offsetHeight/2;
   lens.style.transform = `translate(${lx}px, ${ly}px)`;
 
-  // вычисляем размеры вписанного фонового изображения (cover)
-  const geom = coverGeometry(r.width, r.height, naturalW, naturalH);
+  // геометрия вписанного изображения с учётом background-position
+  const geom = coverGeometryWithPos(r.width, r.height, naturalW, naturalH, currentBgPos);
 
-  // координаты курсора внутри реального изображения
-  const imgX = (x - geom.offX) / geom.w; // 0..1
-  const imgY = (y - geom.offY) / geom.h; // 0..1
+  // нормированные координаты внутри реального изображения
+  let imgX = (x - geom.offX) / geom.w;
+  let imgY = (y - geom.offY) / geom.h;
+  imgX = Math.max(0, Math.min(1, imgX));
+  imgY = Math.max(0, Math.min(1, imgY));
 
-  // фон лупы: увеличить то же изображение с тем же cover-размером, но умноженным на ZOOM
+  // размер и позиция фона лупы
   lens.style.backgroundSize = `${geom.w*ZOOM}px ${geom.h*ZOOM}px`;
 
-  // позиционируем фон так, чтобы точка под курсором совпадала
-  const posX = (imgX*geom.w*ZOOM - x) + lx + lens.offsetWidth/2;
-  const posY = (imgY*geom.h*ZOOM - y) + ly + lens.offsetHeight/2;
+  const focalX = imgX * geom.w * ZOOM;
+  const focalY = imgY * geom.h * ZOOM;
 
-  // переводим в пиксели относительно самой лупы
+  const posX = focalX - (lx + lens.offsetWidth/2);
+  const posY = focalY - (ly + lens.offsetHeight/2);
+
   lens.style.backgroundPosition = `-${posX}px -${posY}px`;
 }
 
@@ -444,11 +457,8 @@ zoomBtn.addEventListener('click', ()=>{
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
   lens.style.display = zoomOn ? 'block' : 'none';
   if(zoomOn){
-    // на включении сразу выставим фон
     const r = stage.getBoundingClientRect();
-    const centerX = r.left + r.width/2;
-    const centerY = r.top  + r.height/2;
-    moveLens(centerX, centerY);
+    moveLens(r.left + r.width/2, r.top + r.height/2);
   }
 });
 stage.addEventListener('mousemove', e=> moveLens(e.clientX, e.clientY));
