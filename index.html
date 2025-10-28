@@ -6,8 +6,8 @@
 <title>ШАГАЙ ДОМА — Найди Привидение Осеннего Лагеря</title>
 <style>
 :root{--brand:#e24a27;--text:#222;--bg:#fff;--panel:#f7f8f9}
+*{box-sizing:border-box}
 body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
-img{max-width:100%;display:block}
 button{cursor:pointer;background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:1rem;transition:.2s}
 button:hover{box-shadow:0 4px 14px rgba(226,74,39,.3);transform:translateY(-1px)}
 button[aria-disabled="true"]{opacity:.6;cursor:default;box-shadow:none;transform:none}
@@ -40,8 +40,9 @@ blockquote.msg p{margin:0;font-size:.97em}
 
 .play-wrap{max-width:1100px;margin:20px auto;display:flex;flex-wrap:wrap;gap:20px;padding:0 14px}
 .stage-wrap{flex:1 1 650px;min-width:320px}
-.stage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ddd center/cover no-repeat;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.stage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ddd;box-shadow:0 10px 30px rgba(0,0,0,.1)}
 .layer{position:absolute;inset:0}
+#imgMain{position:absolute;will-change:transform;user-select:none;-webkit-user-drag:none}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
 .dock{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
 
@@ -106,7 +107,9 @@ blockquote.msg p{margin:0;font-size:.97em}
 <section class="play-wrap" id="gameWrap">
   <div class="stage-wrap">
     <div id="stage" class="stage">
-      <div id="bg" class="layer"></div>
+      <!-- Основное изображение уровня (точный cover) -->
+      <img id="imgMain" alt="" draggable="false" />
+      <!-- слои/эффекты -->
       <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
       <div id="loader" class="loader"><div class="ring"></div></div>
       <!-- ЛУПА -->
@@ -208,7 +211,8 @@ const GAME_CONFIG = {
 
 /* ===== DOM ===== */
 const $=s=>document.querySelector(s);
-const introImg=$('#introImg'), startBtn=$('#startBtn'), stage=$('#stage'), bgLayer=$('#bg');
+const introImg=$('#introImg'), startBtn=$('#startBtn'),
+      stage=$('#stage'), imgMain=$('#imgMain');
 const celebrate=$('#celebrate'), loader=$('#loader');
 const sidePanel=$('#sidePanel'), levelTask=$('#levelTask');
 const levelLabel=$('#levelLabel'), progressBar=$('#progressBar');
@@ -222,8 +226,8 @@ const zoomBtn=$('#zoomBtn'), lens=$('#lens');
 /* ===== СОСТОЯНИЕ ===== */
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
-let currentBgSrc = '', currentBgPos = 'center';
-let naturalW = 0, naturalH = 0; // естественные размеры текущего изображения
+let currentSrc = '', currentBgPos = 'center';
+let naturalW = 0, naturalH = 0; // натуральные размеры картинки
 const ZOOM = 2.2;
 
 /* ===== ПРЕЛОАД + ЛОАДЕР ===== */
@@ -241,17 +245,6 @@ function showLoader(seq){ if(seq !== loadSeq) return; loader.style.display = 'gr
 function hideLoader(seq){ if(seq !== loadSeq) return; requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display = 'none'; })); }
 
 /* ===== УТИЛИТЫ ===== */
-function setBg(url, pos='center'){
-  currentBgSrc = url; currentBgPos = pos;
-  bgLayer.style.opacity='0';
-  setTimeout(()=>{
-    bgLayer.style.backgroundImage=`url('${url}')`;
-    bgLayer.style.backgroundSize='cover';
-    bgLayer.style.backgroundPosition=pos;
-    bgLayer.style.opacity='1';
-  }, 20);
-  lens.style.backgroundImage = `url('${url}')`;
-}
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
 function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100, rect:r }; }
 function inside(p,r){ return p.x>=r.x-r.w/2 && p.x<=r.x+r.w/2 && p.y>=r.y-r.h/2 && p.y<=r.y+r.h/2; }
@@ -274,32 +267,12 @@ function updateHud(){
 /* ===== ИНТРО ===== */
 preload(ASSETS.start).then(({src})=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); });
 
-/* ===== СТАРТ ===== */
-startBtn.onclick=()=>{
-  document.body.classList.remove('prestart');
-  document.body.classList.add('started');
-
-  // восстановление очков
-  const total = GAME_CONFIG.levels.length;
-  state.score = 0;
-  for(let i=0;i<total;i++) if(localStorage.getItem(`level_done_${i}`)==='1') state.score += 100;
-  scoreEl.textContent = state.score;
-
-  // продолжить с сохранённого уровня
-  let saved = parseInt(localStorage.getItem('current_level') || '0', 10);
-  if (!Number.isFinite(saved) || saved < 0) saved = 0;
-  if (saved >= total) saved = 0;
-  startLevel(saved);
-};
-
-/* ===== Парсер background-position ===== */
+/* ===== background-position парсер ===== */
 function parseBgPos(pos){
-  // возвращает коэффициенты 0..1 для X/Y
   let x='50%', y='50%';
   if(typeof pos==='string'){
     const parts = pos.trim().split(/\s+/);
-    if(parts.length===1){ x = parts[0]; y='50%'; }
-    else { x = parts[0]; y = parts[1]; }
+    if(parts.length===1){ x = parts[0]; } else { x = parts[0]; y = parts[1]; }
   }
   const map = {left:'0%', top:'0%', center:'50%', right:'100%', bottom:'100%'};
   x = map[x] || x; y = map[y] || y;
@@ -307,20 +280,59 @@ function parseBgPos(pos){
   return {px:toF(x), py:toF(y)};
 }
 
-/* ===== Геометрия cover с учётом позиции ===== */
-function coverGeometryWithPos(containerW, containerH, imgW, imgH, posStr){
-  if(!imgW || !imgH) return {w:containerW,h:containerH,offX:0,offY:0};
+/* ===== cover-геометрия + позиция для IMG ===== */
+function layoutCoverForImg(containerW, containerH, imgW, imgH, posStr){
+  if(!imgW||!imgH) return {w:containerW,h:containerH,left:0,top:0};
   const {px,py} = parseBgPos(posStr||'50% 50%');
   const rC = containerW / containerH;
   const rI = imgW / imgH;
   let w,h;
   if(rC > rI){ w = containerW; h = w / rI; }
-  else{ h = containerH; w = h * rI; }
-  // смещения рассчитываются по спецификации: (контейнер - изображение) * процент
-  const offX = (containerW - w) * px;
-  const offY = (containerH - h) * py;
-  return {w,h,offX,offY};
+  else { h = containerH; w = h * rI; }
+  const left = (containerW - w) * px;
+  const top  = (containerH - h) * py;
+  return {w,h,left,top};
 }
+
+/* ===== установка картинки уровня ===== */
+function setImage(url, pos='center'){
+  currentSrc = url; currentBgPos = pos;
+  imgMain.style.opacity='0';
+  imgMain.src = url;
+  imgMain.onload = () => {
+    naturalW = imgMain.naturalWidth;
+    naturalH = imgMain.naturalHeight;
+    // выставляем точный cover
+    const r = stage.getBoundingClientRect();
+    const g = layoutCoverForImg(r.width, r.height, naturalW, naturalH, pos);
+    Object.assign(imgMain.style, {
+      width: g.w + 'px', height: g.h + 'px',
+      left: g.left + 'px', top: g.top + 'px', opacity:'1'
+    });
+    // синхронизируем фон лупы
+    lens.style.backgroundImage = `url('${url}')`;
+    lens.dataset.w = g.w;   // отображаемая ширина
+    lens.dataset.h = g.h;   // отображаемая высота
+    lens.dataset.left = g.left;
+    lens.dataset.top  = g.top;
+  };
+}
+
+/* ===== СТАРТ ===== */
+startBtn.onclick=()=>{
+  document.body.classList.remove('prestart');
+  document.body.classList.add('started');
+
+  const total = GAME_CONFIG.levels.length;
+  state.score = 0;
+  for(let i=0;i<total;i++) if(localStorage.getItem(`level_done_${i}`)==='1') state.score += 100;
+  scoreEl.textContent = state.score;
+
+  let saved = parseInt(localStorage.getItem('current_level') || '0', 10);
+  if (!Number.isFinite(saved) || saved < 0) saved = 0;
+  if (saved >= total) saved = 0;
+  startLevel(saved);
+};
 
 /* ===== ЗАПУСК УРОВНЯ ===== */
 async function startLevel(i){
@@ -340,7 +352,7 @@ async function startLevel(i){
   const {src,width,height} = await preload(L.bg);
   if (seq !== loadSeq) return;
   naturalW = width; naturalH = height;
-  setBg(src, L.bgPos || 'center');
+  setImage(src, L.bgPos || 'center');
   if (L.bgFound) preload(L.bgFound);
   hideLoader(seq);
 
@@ -369,7 +381,7 @@ async function onFound(L, idx){
   const found = await preload(L.bgFound);
   if (seq !== loadSeq) return;
   naturalW = found.width; naturalH = found.height;
-  setBg(found.src, L.bgFoundPos || 'center');
+  setImage(found.src, L.bgFoundPos || 'center');
   hideLoader(seq);
 
   sidePanel.querySelector('h3').textContent = L.introTitle;
@@ -418,33 +430,39 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА: точное совпадение с cover + background-position ===== */
+/* ===== ЛУПА: точное совпадение с cover + позицией IMG ===== */
 let zoomOn=false;
 function moveLens(clientX, clientY){
   if(!zoomOn) return;
   const r = stage.getBoundingClientRect();
+
   let x = Math.max(0, Math.min(r.width,  clientX - r.left));
   let y = Math.max(0, Math.min(r.height, clientY - r.top));
 
-  // позиция самой лупы
+  // позиция лупы
   const lx = x - lens.offsetWidth/2;
   const ly = y - lens.offsetHeight/2;
   lens.style.transform = `translate(${lx}px, ${ly}px)`;
 
-  // геометрия вписанного изображения с учётом background-position
-  const geom = coverGeometryWithPos(r.width, r.height, naturalW, naturalH, currentBgPos);
+  // размеры отображённого IMG и его смещение
+  const g = {
+    w: parseFloat(lens.dataset.w||imgMain.width),
+    h: parseFloat(lens.dataset.h||imgMain.height),
+    left: parseFloat(lens.dataset.left||imgMain.offsetLeft),
+    top:  parseFloat(lens.dataset.top ||imgMain.offsetTop),
+  };
 
-  // нормированные координаты внутри реального изображения
-  let imgX = (x - geom.offX) / geom.w;
-  let imgY = (y - geom.offY) / geom.h;
-  imgX = Math.max(0, Math.min(1, imgX));
-  imgY = Math.max(0, Math.min(1, imgY));
+  // нормированные координаты внутри IMG
+  let nx = (x - g.left) / g.w;
+  let ny = (y - g.top)  / g.h;
+  nx = Math.max(0, Math.min(1, nx));
+  ny = Math.max(0, Math.min(1, ny));
 
-  // размер и позиция фона лупы
-  lens.style.backgroundSize = `${geom.w*ZOOM}px ${geom.h*ZOOM}px`;
+  // задний фон лупы — то же изображение, масштабированное
+  lens.style.backgroundSize = `${g.w*ZOOM}px ${g.h*ZOOM}px`;
 
-  const focalX = imgX * geom.w * ZOOM;
-  const focalY = imgY * geom.h * ZOOM;
+  const focalX = nx * g.w * ZOOM;
+  const focalY = ny * g.h * ZOOM;
 
   const posX = focalX - (lx + lens.offsetWidth/2);
   const posY = focalY - (ly + lens.offsetHeight/2);
@@ -466,7 +484,15 @@ stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lens.style.display='none';
 stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lens.style.display='block'; });
 stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lens.style.display='block'; moveLens(t.clientX,t.clientY); }, {passive:true});
 stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; moveLens(t.clientX,t.clientY); }, {passive:true});
-window.addEventListener('resize', ()=>{ if(zoomOn){ const r=stage.getBoundingClientRect(); moveLens(r.left+r.width/2, r.top+r.height/2); }});
+window.addEventListener('resize', ()=>{
+  // перелайаут IMG под новый контейнер
+  if(!currentSrc) return;
+  const r = stage.getBoundingClientRect();
+  const g = layoutCoverForImg(r.width, r.height, naturalW, naturalH, currentBgPos);
+  Object.assign(imgMain.style, {width:g.w+'px',height:g.h+'px',left:g.left+'px',top:g.top+'px'});
+  lens.dataset.w=g.w; lens.dataset.h=g.h; lens.dataset.left=g.left; lens.dataset.top=g.top;
+  if(zoomOn){ moveLens(r.left+r.width/2, r.top+r.height/2); }
+});
 </script>
 </body>
 </html>
