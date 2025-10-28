@@ -18,10 +18,10 @@ body.started #introWrap{display:none!important}
 /* Intro */
 .intro-wrap{max-width:960px;margin:0 auto;padding:20px}
 .intro{position:relative;overflow:hidden;border-radius:18px;background:#f1f2f3;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.intro figure{margin:0;position:absolute;inset:0}
+.intro figure{margin:0;position:absolute;inset:0;z-index:0;pointer-events:none;} /* FIX: intro click */
 .intro img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
 .intro img.ready{opacity:1}
-.intro .panel{position:relative;padding:24px;background:rgba(255,255,255,.86);backdrop-filter:blur(6px)}
+.intro .panel{position:relative;z-index:1;padding:24px;background:rgba(255,255,255,.86);backdrop-filter:blur(6px)} /* FIX: intro click */
 .intro h1{margin:0 0 8px;font-size:1.8rem}
 .intro p{margin:10px 0;line-height:1.45}
 blockquote.msg{margin:14px 0;padding:10px 14px;background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 12px rgba(0,0,0,.06)}
@@ -168,46 +168,33 @@ const ASSETS = {
 
 const GAME_CONFIG = {
   levels: [
-    { // 1
-      bg: ASSETS.lvl1, bgFound: ASSETS.lvl1found,
-      hotspot: { x: 97.25, y: 53.8, w: 3.4, h: 11.5 },
-      introTitle: 'Доброе утро!',
-      introText: 'Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?',
-      taskText: '🎯 Задание: пройти 300 шагов или сделать разминку на 2 минуты.',
-      options: [['steps300','Я прошёл(ла) 300 шагов'],['warmup2m','Я сделал(а) зарядку 2 минуты']]
-    },
-    { // 2 — шезлонги
-      bg: ASSETS.lvl2, bgPos: 'center', bgFound: ASSETS.lvl2found, bgFoundPos: 'center 60%',
-      poly: [[20.65,80.12],[22.50,82.84],[20.80,87.27],[18.64,82.59]],
-      introTitle: 'Минутка отдыха',
-      introText: 'Фух… даже призракам нужен отдых! Иногда самое полезное — просто полежать и послушать, как шуршат листья. А потом, конечно, немного пошагать — чтобы не заснуть',
-      taskText: '🎯 Задание дня: спокойная прогулка 10–15 минут или разминка для спины и шеи.',
-      options: [['walk15','Спокойная прогулка 10–15 минут'],['stretch','Разминка для спины и шеи']]
-    },
-    { // 3 — столовая
-      bg: ASSETS.lvl3, bgFound: ASSETS.lvl3found,
-      hotspot: { x: 80, y: 70, w: 5, h: 9 },
-      introTitle: 'Горячий какао',
-      introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
-      taskText: '🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
-      options: [['steps500','500 шагов под музыку'],['march1m','Пошагать 1 минуту']]
-    },
-    { // 4
-      bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
-      poly: [[28.04,91.96],[30.05,93.68],[28.20,96.39],[26.96,94.18]],
-      introTitle: 'В здоровом теле — здоровый дух!',
-      introText: 'Даже призраки делают зарядку, а вы? Уже размялись?',
-      taskText: '🎯 Задания: 1) зарядка от Димы или 2) 5 минут мягкой растяжки всего тела.',
-      options: [['dima_warmup','Зарядка от Димы'],['stretch5','5 минут мягкой растяжки']]
-    },
-    { // 5 — финал
-      bg: ASSETS.lvl5, bgFound: ASSETS.lvl5found,
-      poly: [[72.73,63.61],[74.27,67.80],[72.57,73.22],[71.03,67.80]],
-      introTitle: 'Финал! Шагуня найден',
-      introText: 'Вы прошли все локации лагеря и ни разу не испуглись! Шагуня благодарит за компанию.',
-      taskText: '🎯 Задание: 10 минут прогулки на свежем воздухе или любимая тренировка целиком.',
-      options: [['walk10','Прогулка 10 минут'],['favworkout','Любимая тренировка целиком']]
-    }
+    {bg:ASSETS.lvl1,bgFound:ASSETS.lvl1found,hotspot:{x:97.25,y:53.8,w:3.4,h:11.5},
+     introTitle:'Доброе утро!',introText:'Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?',
+     taskText:'🎯 Задание: пройти 300 шагов или сделать разминку на 2 минуты.',
+     options:[['steps300','Я прошёл(ла) 300 шагов'],['warmup2m','Я сделал(а) зарядку 2 минуты']]},
+    {bg:ASSETS.lvl2,bgPos:'center',bgFound:ASSETS.lvl2found,bgFoundPos:'center 60%',
+     poly:[[20.65,80.12],[22.50,82.84],[20.80,87.27],[18.64,82.59]],
+     introTitle:'Минутка отдыха',introText:'Фух… даже призракам нужен отдых! Иногда самое полезное — просто полежать и послушать, как шуршат листья. А потом, конечно, немного пошагать — чтобы не заснуть',
+     taskText:'🎯 Задание дня: спокойная прогулка 10–15 минут или разминка для спины и шеи.',
+     options:[['walk15','Спокойная прогулка 10–15 минут'],['stretch','Разминка для спины и шеи']]},
+    {bg:ASSETS.lvl3,bgFound:ASSETS.lvl3found,
+     hotspot:{x:80,y:70,w:5,h:9},
+     introTitle:'Горячий какао',
+     introText:'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
+     taskText:'🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
+     options:[['steps500','500 шагов под музыку'],['march1m','Пошагать 1 минуту']]},
+    {bg:ASSETS.lvl4,bgFound:ASSETS.lvl4found,bgFoundPos:'center 58%',
+     poly:[[28.04,91.96],[30.05,93.68],[28.20,96.39],[26.96,94.18]],
+     introTitle:'В здоровом теле — здоровый дух!',
+     introText:'Даже призраки делают зарядку, а вы? Уже размялись?',
+     taskText:'🎯 Задания: 1) зарядка от Димы или 2) 5 минут мягкой растяжки всего тела.',
+     options:[['dima_warmup','Зарядка от Димы'],['stretch5','5 минут мягкой растяжки']]},
+    {bg:ASSETS.lvl5,bgFound:ASSETS.lvl5found,
+     poly:[[72.73,63.61],[74.27,67.80],[72.57,73.22],[71.03,67.80]],
+     introTitle:'Финал! Шагуня найден',
+     introText:'Вы прошли все локации лагеря и ни разу не испуглись! Шагуня благодарит за компанию.',
+     taskText:'🎯 Задание: 10 минут прогулки на свежем воздухе или любимая тренировка целиком.',
+     options:[['walk10','Прогулка 10 минут'],['favworkout','Любимая тренировка целиком']]}
   ]
 };
 
@@ -309,7 +296,8 @@ function setImage(url, pos='center'){
   };
 }
 
-startBtn.onclick=()=>{
+/* --- старт игры --- */
+function startGame(){
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
 
@@ -322,7 +310,15 @@ startBtn.onclick=()=>{
   if (!Number.isFinite(saved) || saved < 0) saved = 0;
   if (saved >= total) saved = 0;
   startLevel(saved);
-};
+}
+
+/* FIX: гарантируем кликабельность кнопки */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('startBtn');
+  if(btn){
+    btn.addEventListener('click', (e)=>{ e.preventDefault(); startGame(); });
+  }
+});
 
 async function startLevel(i){
   currentLevel = i;
@@ -350,7 +346,6 @@ async function startLevel(i){
   stage.onclick = (e) => {
     if(state.found) return;
     const pt = clickPt(e);
-    if(e.shiftKey) console.log(`x:${pt.x.toFixed(2)} y:${pt.y.toFixed(2)}`);
 
     let hit=false;
     if(L.poly) hit = pointInPoly(pt, L.poly);
@@ -416,7 +411,7 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА (canvas) — edge-safe + stage-safe ===== */
+/* ===== Лупа (edge-safe + stage-safe) ===== */
 let zoomOn=false;
 
 function currentImgGeom(){
@@ -448,7 +443,6 @@ function drawLensAt(clientX, clientY){
   const srcW = (LENS_D / ZOOM) * pxPerStageX;
   const srcH = (LENS_D / ZOOM) * pxPerStageY;
 
-  // 1) кламп по источнику, чтобы картинка не обрезалась внутри лупы
   const nxMin = (srcW/2) / naturalW, nxMax = 1 - nxMin;
   const nyMin = (srcH/2) / naturalH, nyMax = 1 - nyMin;
   const xMinStage = g.left + nxMin * g.w, xMaxStage = g.left + nxMax * g.w;
@@ -456,16 +450,13 @@ function drawLensAt(clientX, clientY){
   x = Math.max(xMinStage, Math.min(xMaxStage, x));
   y = Math.max(yMinStage, Math.min(yMaxStage, y));
 
-  // 2) кламп по рамке сцены, чтобы круг лупы не «обрезался» краем stage
   const xMinLens = LENS_R, xMaxLens = stageRect.width  - LENS_R;
   const yMinLens = LENS_R, yMaxLens = stageRect.height - LENS_R;
   x = Math.max(xMinLens, Math.min(xMaxLens, x));
   y = Math.max(yMinLens, Math.min(yMaxLens, y));
 
-  // позиция визуальной лупы
   lensCv.style.transform = `translate(${x - LENS_R}px, ${y - LENS_R}px)`;
 
-  // нормированные координаты внутри IMG (после обоих клампов)
   const nx = (x - g.left) / g.w;
   const ny = (y - g.top)  / g.h;
 
@@ -484,7 +475,6 @@ function drawLensAt(clientX, clientY){
   lctx.strokeStyle = 'rgba(0,0,0,.28)'; lctx.lineWidth = 3; lctx.stroke();
 }
 
-const zoomBtn=$("#zoomBtn");
 zoomBtn.addEventListener('click', ()=>{
   zoomOn = !zoomOn;
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
