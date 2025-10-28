@@ -46,10 +46,18 @@ blockquote.msg p{margin:0;font-size:.97em}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
 .dock{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
 
-/* magnifier */
+/* magnifier (canvas) */
+.lens-canvas{
+  position:absolute; top:0; left:0;
+  width:180px; height:180px;
+  border-radius:50%;
+  border:3px solid rgba(0,0,0,.28);
+  box-shadow:0 8px 24px rgba(0,0,0,.28);
+  pointer-events:none;
+  display:none; z-index:5; background:transparent;
+}
 .tool-btn{background:#fff;color:var(--text);border:1px solid rgba(0,0,0,.12);padding:8px 12px;border-radius:10px}
 .tool-btn[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 2px rgba(226,74,39,.15)}
-.lens{position:absolute;top:0;left:0;width:150px;height:150px;border-radius:50%;border:3px solid rgba(0,0,0,.25);box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;display:none;z-index:5;background-repeat:no-repeat;background-color:transparent}
 
 /* side panel */
 .side{flex:0 0 340px;background:var(--panel);border-radius:16px;padding:16px;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 20px rgba(0,0,0,.1);display:none}
@@ -57,7 +65,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 .side p{margin:0 0 10px}
 .hint{background:#fff;border-radius:10px;border:1px dashed rgba(0,0,0,.2);padding:10px 12px;margin-bottom:10px}
 
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;display:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;display:none;z-index:50}
 .loader{position:absolute;inset:0;display:none;place-items:center;background:rgba(255,255,255,.4);z-index:4}
 .ring{width:36px;height:36px;border-radius:50%;border:4px solid rgba(0,0,0,.1);border-top-color:var(--brand);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -109,11 +117,11 @@ blockquote.msg p{margin:0;font-size:.97em}
     <div id="stage" class="stage">
       <!-- Основное изображение уровня (точный cover) -->
       <img id="imgMain" alt="" draggable="false" />
-      <!-- слои/эффекты -->
+      <!-- Эффекты -->
       <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
       <div id="loader" class="loader"><div class="ring"></div></div>
-      <!-- ЛУПА -->
-      <div id="lens" class="lens" aria-hidden="true"></div>
+      <!-- ЛУПА (canvas) -->
+      <canvas id="lens" class="lens-canvas" width="180" height="180" aria-hidden="true"></canvas>
     </div>
     <div class="dock">
       <button id="zoomBtn" type="button" class="tool-btn" aria-pressed="false" title="Лупа">🔍 Лупа</button>
@@ -126,7 +134,7 @@ blockquote.msg p{margin:0;font-size:.97em}
     <h3>Доброе утро!</h3>
     <p>Пора разогнать сон. Я люблю начинать день с лёгких шагов — а ты?</p>
     <div class="hint">
-      <div id="hintText">🎯 <b>Задание:</b> пройти 300 шагов или сделать зарядку на 2 минуты.</div>
+      <div id="hintText">🎯 <b>Задание:</b> пройти 300 шагов или сделать разминку на 2 минуты.</div>
     </div>
     <div class="btns">
       <button id="reportBtn" type="button">Отчитаться</button>
@@ -187,24 +195,24 @@ const GAME_CONFIG = {
       hotspot: { x: 80, y: 70, w: 5, h: 9 },
       introTitle: 'Горячий какао',
       introText: 'Горячий какао и день уже чуть-чуть лучше! А чтобы он стал совсем прекрасным, нужно добавить в него немного шагов',
-      taskText: '🎯 Задание: сделать 1000 шагов под музыку или пошагать на месте 10 минут.',
+      taskText: '🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
       options: [['steps500','500 шагов под музыку'],['march1m','Пошагать 1 минуту']]
     },
     { // 4 — зарядка
       bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
-      poly: [[28.59,91.35],[28.50,96.73],[26.86,93.96],[29.86,93.82]],
+      poly: [[28.04,91.96],[30.05,93.68],[28.20,96.39],[26.96,94.18]],
       introTitle: 'В здоровом теле — здоровый дух!',
       introText: 'Даже призраки делают зарядку, а вы? Уже размялись?',
-      taskText: '🎯 Задания: зарядка от Димы — или 15 минут мягкой растяжки всего тела.',
-      options: [['dima_warmup','Зарядка от Димы'],['stretch5','15 минут мягкой растяжки']]
+      taskText: '🎯 Задания: 1) зарядка от Димы или 2) 5 минут мягкой растяжки всего тела.',
+      options: [['dima_warmup','Зарядка от Димы'],['stretch5','5 минут мягкой растяжки']]
     },
     { // 5 — финал
       bg: ASSETS.lvl5, bgFound: ASSETS.lvl5found,
       poly: [[72.73,63.61],[74.27,67.80],[72.57,73.22],[71.03,67.80]],
       introTitle: 'Финал! Шагуня найден',
-      introText: 'Вы прошли все локации лагеря и ни разу не испугись! Шагуня благодарит за компанию.',
-      taskText: '🎯 Задание финального дня: 45 минут прогулки на свежем воздухе или любимая тренировка целиком.',
-      options: [['walk10','Прогулка 45 минут'],['favworkout','Любимая тренировка целиком']]
+      introText: 'Вы прошли все локации лагеря и ни разу не испуглись! Шагуня благодарит за компанию.',
+      taskText: '🎯 Задание: 10 минут прогулки на свежем воздухе или любимая тренировка целиком.',
+      options: [['walk10','Прогулка 10 минут'],['favworkout','Любимая тренировка целиком']]
     }
   ]
 };
@@ -221,13 +229,14 @@ const hintText=$('#hintText'), reportOptions=$('#reportOptions'), scoreEl=$('#sc
 const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
 
 /* magnifier DOM */
-const zoomBtn=$('#zoomBtn'), lens=$('#lens');
+const zoomBtn=$('#zoomBtn'), lensCv=$('#lens'), lctx=lensCv.getContext('2d',{alpha:true});
 
 /* ===== СОСТОЯНИЕ ===== */
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
 let currentSrc = '', currentBgPos = 'center';
 let naturalW = 0, naturalH = 0; // натуральные размеры картинки
+const LENS_D = 180, LENS_R = LENS_D/2; // лупа
 const ZOOM = 2.2;
 
 /* ===== ПРЕЛОАД + ЛОАДЕР ===== */
@@ -309,12 +318,11 @@ function setImage(url, pos='center'){
       width: g.w + 'px', height: g.h + 'px',
       left: g.left + 'px', top: g.top + 'px', opacity:'1'
     });
-    // синхронизируем фон лупы
-    lens.style.backgroundImage = `url('${url}')`;
-    lens.dataset.w = g.w;   // отображаемая ширина
-    lens.dataset.h = g.h;   // отображаемая высота
-    lens.dataset.left = g.left;
-    lens.dataset.top  = g.top;
+    // синхронизируем геометрию для лупы
+    lensCv.dataset.w = g.w; 
+    lensCv.dataset.h = g.h; 
+    lensCv.dataset.left = g.left; 
+    lensCv.dataset.top  = g.top;
   };
 }
 
@@ -430,68 +438,93 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА: точное совпадение с cover + позицией IMG ===== */
+/* ===== ЛУПА (canvas, pixel-perfect) ===== */
 let zoomOn=false;
-function moveLens(clientX, clientY){
-  if(!zoomOn) return;
-  const r = stage.getBoundingClientRect();
 
-  let x = Math.max(0, Math.min(r.width,  clientX - r.left));
-  let y = Math.max(0, Math.min(r.height, clientY - r.top));
-
-  // позиция лупы
-  const lx = x - lens.offsetWidth/2;
-  const ly = y - lens.offsetHeight/2;
-  lens.style.transform = `translate(${lx}px, ${ly}px)`;
-
-  // размеры отображённого IMG и его смещение
-  const g = {
-    w: parseFloat(lens.dataset.w||imgMain.width),
-    h: parseFloat(lens.dataset.h||imgMain.height),
-    left: parseFloat(lens.dataset.left||imgMain.offsetLeft),
-    top:  parseFloat(lens.dataset.top ||imgMain.offsetTop),
+function currentImgGeom(){
+  return {
+    w: parseFloat(lensCv.dataset.w || imgMain.width),
+    h: parseFloat(lensCv.dataset.h || imgMain.height),
+    left: parseFloat(lensCv.dataset.left || imgMain.offsetLeft),
+    top:  parseFloat(lensCv.dataset.top  || imgMain.offsetTop)
   };
+}
+function syncLensGeomFromImg(){
+  const r = stage.getBoundingClientRect();
+  const g = layoutCoverForImg(r.width, r.height, naturalW, naturalH, currentBgPos);
+  Object.assign(imgMain.style, { width:g.w+'px', height:g.h+'px', left:g.left+'px', top:g.top+'px' });
+  lensCv.dataset.w=g.w; lensCv.dataset.h=g.h; lensCv.dataset.left=g.left; lensCv.dataset.top=g.top;
+}
 
-  // нормированные координаты внутри IMG
+function drawLensAt(clientX, clientY){
+  if(!zoomOn) return;
+
+  const stageRect = stage.getBoundingClientRect();
+  let x = Math.max(stageRect.left, Math.min(stageRect.right, clientX)) - stageRect.left;
+  let y = Math.max(stageRect.top,  Math.min(stageRect.bottom, clientY)) - stageRect.top;
+
+  const lx = x - LENS_R;
+  const ly = y - LENS_R;
+  lensCv.style.transform = `translate(${lx}px, ${ly}px)`;
+
+  const g = currentImgGeom();
+
   let nx = (x - g.left) / g.w;
   let ny = (y - g.top)  / g.h;
   nx = Math.max(0, Math.min(1, nx));
   ny = Math.max(0, Math.min(1, ny));
 
-  // задний фон лупы — то же изображение, масштабированное
-  lens.style.backgroundSize = `${g.w*ZOOM}px ${g.h*ZOOM}px`;
+  const pxPerStageX = naturalW / g.w;
+  const pxPerStageY = naturalH / g.h;
+  const imgPX = nx * naturalW;
+  const imgPY = ny * naturalH;
 
-  const focalX = nx * g.w * ZOOM;
-  const focalY = ny * g.h * ZOOM;
+  const srcW = (LENS_D / ZOOM) * pxPerStageX;
+  const srcH = (LENS_D / ZOOM) * pxPerStageY;
+  let sx = imgPX - srcW/2;
+  let sy = imgPY - srcH/2;
 
-  const posX = focalX - (lx + lens.offsetWidth/2);
-  const posY = focalY - (ly + lens.offsetHeight/2);
+  if(sx < 0) sx = 0;
+  if(sy < 0) sy = 0;
+  if(sx + srcW > naturalW) sx = naturalW - srcW;
+  if(sy + srcH > naturalH) sy = naturalH - srcH;
 
-  lens.style.backgroundPosition = `-${posX}px -${posY}px`;
+  lctx.clearRect(0,0,LENS_D,LENS_D);
+  lctx.save();
+  lctx.beginPath();
+  lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
+  lctx.closePath();
+  lctx.clip();
+  lctx.imageSmoothingEnabled = true;
+  lctx.drawImage(imgMain, sx, sy, srcW, srcH, 0, 0, LENS_D, LENS_D);
+  lctx.restore();
+
+  lctx.beginPath();
+  lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
+  lctx.strokeStyle = 'rgba(0,0,0,.28)';
+  lctx.lineWidth = 3;
+  lctx.stroke();
 }
 
 zoomBtn.addEventListener('click', ()=>{
   zoomOn = !zoomOn;
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
-  lens.style.display = zoomOn ? 'block' : 'none';
+  lensCv.style.display = zoomOn ? 'block' : 'none';
   if(zoomOn){
     const r = stage.getBoundingClientRect();
-    moveLens(r.left + r.width/2, r.top + r.height/2);
+    drawLensAt(r.left + r.width/2, r.top + r.height/2);
   }
 });
-stage.addEventListener('mousemove', e=> moveLens(e.clientX, e.clientY));
-stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lens.style.display='none'; });
-stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lens.style.display='block'; });
-stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lens.style.display='block'; moveLens(t.clientX,t.clientY); }, {passive:true});
-stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; moveLens(t.clientX,t.clientY); }, {passive:true});
+stage.addEventListener('mousemove', e=>{ if(zoomOn) drawLensAt(e.clientX, e.clientY); });
+stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lensCv.style.display='none'; });
+stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lensCv.style.display='block'; });
+stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lensCv.style.display='block'; drawLensAt(t.clientX,t.clientY); }, {passive:true});
+stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; drawLensAt(t.clientX,t.clientY); }, {passive:true});
 window.addEventListener('resize', ()=>{
-  // перелайаут IMG под новый контейнер
   if(!currentSrc) return;
+  syncLensGeomFromImg();
   const r = stage.getBoundingClientRect();
-  const g = layoutCoverForImg(r.width, r.height, naturalW, naturalH, currentBgPos);
-  Object.assign(imgMain.style, {width:g.w+'px',height:g.h+'px',left:g.left+'px',top:g.top+'px'});
-  lens.dataset.w=g.w; lens.dataset.h=g.h; lens.dataset.left=g.left; lens.dataset.top=g.top;
-  if(zoomOn){ moveLens(r.left+r.width/2, r.top+r.height/2); }
+  if(zoomOn) drawLensAt(r.left + r.width/2, r.top + r.height/2);
 });
 </script>
 </body>
