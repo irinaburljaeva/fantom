@@ -18,10 +18,10 @@ body.started #introWrap{display:none!important}
 /* Intro */
 .intro-wrap{max-width:960px;margin:0 auto;padding:20px}
 .intro{position:relative;overflow:hidden;border-radius:18px;background:#f1f2f3;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.intro figure{margin:0;position:absolute;inset:0;z-index:0;pointer-events:none;} /* FIX: intro click */
+.intro figure{margin:0;position:absolute;inset:0;z-index:0;pointer-events:none;}
 .intro img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
 .intro img.ready{opacity:1}
-.intro .panel{position:relative;z-index:1;padding:24px;background:rgba(255,255,255,.86);backdrop-filter:blur(6px)} /* FIX: intro click */
+.intro .panel{position:relative;z-index:1;padding:24px;background:rgba(255,255,255,.86);backdrop-filter:blur(6px)}
 .intro h1{margin:0 0 8px;font-size:1.8rem}
 .intro p{margin:10px 0;line-height:1.45}
 blockquote.msg{margin:14px 0;padding:10px 14px;background:#fff;border-radius:14px;border:1px solid rgba(0,0,0,.08);box-shadow:0 4px 12px rgba(0,0,0,.06)}
@@ -40,7 +40,15 @@ blockquote.msg p{margin:0;font-size:.97em}
 
 .play-wrap{max-width:1100px;margin:20px auto;display:flex;flex-wrap:wrap;gap:20px;padding:0 14px}
 .stage-wrap{flex:1 1 650px;min-width:320px}
-.stage{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:#ddd;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+.stage{
+  position:relative;
+  aspect-ratio:16/10;
+  border-radius:16px;
+  /* РАНЬШЕ: overflow:hidden — из-за этого лупа обрезалась
+     ТЕПЕРЬ даём ей выходить за пределы сцены */
+  overflow:visible;
+  background:#ddd;box-shadow:0 10px 30px rgba(0,0,0,.1)
+}
 .layer{position:absolute;inset:0}
 #imgMain{position:absolute;will-change:transform;user-select:none;-webkit-user-drag:none}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
@@ -157,6 +165,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 <div id="toast" class="toast"></div>
 
 <script>
+/* ==== ассеты и уровни ==== */
 const ASSETS = {
   start:'start.jpg',
   lvl1:'lvl1.jpg',       lvl1found:'lvl1found.jpg',
@@ -192,12 +201,13 @@ const GAME_CONFIG = {
     {bg:ASSETS.lvl5,bgFound:ASSETS.lvl5found,
      poly:[[72.73,63.61],[74.27,67.80],[72.57,73.22],[71.03,67.80]],
      introTitle:'Финал! Шагуня найден',
-     introText:'Вы прошли все локации лагеря и ни разу не испуглись! Шагуня благодарит за компанию.',
+     introText:'Вы прошли все локации лагеря и ни разу не испугались! Шагуня благодарит за компанию.',
      taskText:'🎯 Задание: 10 минут прогулки на свежем воздухе или любимая тренировка целиком.',
      options:[['walk10','Прогулка 10 минут'],['favworkout','Любимая тренировка целиком']]}
   ]
 };
 
+/* ==== утилиты ==== */
 const $=s=>document.querySelector(s);
 const introImg=$('#introImg'), startBtn=$('#startBtn'),
       stage=$('#stage'), imgMain=$('#imgMain');
@@ -312,12 +322,10 @@ function startGame(){
   startLevel(saved);
 }
 
-/* FIX: гарантируем кликабельность кнопки */
+/* кликаем старт уверенно */
 document.addEventListener('DOMContentLoaded', ()=>{
   const btn = document.getElementById('startBtn');
-  if(btn){
-    btn.addEventListener('click', (e)=>{ e.preventDefault(); startGame(); });
-  }
+  if(btn){ btn.addEventListener('click', (e)=>{ e.preventDefault(); startGame(); }); }
 });
 
 async function startLevel(i){
@@ -411,8 +419,9 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== Лупа (edge-safe + stage-safe) ===== */
+/* ===== Лупа: выходит за края, корректно показывает частичные области ===== */
 let zoomOn=false;
+let moveHandler=null, touchHandler=null;
 
 function currentImgGeom(){
   return {
@@ -429,50 +438,90 @@ function syncLensGeomFromImg(){
   lensCv.dataset.w=g.w; lensCv.dataset.h=g.h; lensCv.dataset.left=g.left; lensCv.dataset.top=g.top;
 }
 
+/* рисуем с учётом выхода за края */
 function drawLensAt(clientX, clientY){
   if(!zoomOn) return;
 
   const stageRect = stage.getBoundingClientRect();
-  let x = Math.max(stageRect.left, Math.min(stageRect.right, clientX)) - stageRect.left;
-  let y = Math.max(stageRect.top,  Math.min(stageRect.bottom, clientY)) - stageRect.top;
+  // позиция круга — свободно по окну (может выйти за сцену)
+  const x = clientX - stageRect.left;
+  const y = clientY - stageRect.top;
+  lensCv.style.transform = `translate(${x - LENS_R}px, ${y - LENS_R}px)`;
 
   const g = currentImgGeom();
+
+  // нормированные координаты точки относительно изображения (могут быть <0 и >1)
+  const nx = (x - g.left) / g.w;
+  const ny = (y - g.top)  / g.h;
+
+  // пиксели в исходнике
+  const imgPX = nx * naturalW;
+  const imgPY = ny * naturalH;
+
   const pxPerStageX = naturalW / g.w;
   const pxPerStageY = naturalH / g.h;
 
   const srcW = (LENS_D / ZOOM) * pxPerStageX;
   const srcH = (LENS_D / ZOOM) * pxPerStageY;
 
-  const nxMin = (srcW/2) / naturalW, nxMax = 1 - nxMin;
-  const nyMin = (srcH/2) / naturalH, nyMax = 1 - nyMin;
-  const xMinStage = g.left + nxMin * g.w, xMaxStage = g.left + nxMax * g.w;
-  const yMinStage = g.top  + nyMin * g.h, yMaxStage = g.top  + nyMax * g.h;
-  x = Math.max(xMinStage, Math.min(xMaxStage, x));
-  y = Math.max(yMinStage, Math.min(yMaxStage, y));
-
-  const xMinLens = LENS_R, xMaxLens = stageRect.width  - LENS_R;
-  const yMinLens = LENS_R, yMaxLens = stageRect.height - LENS_R;
-  x = Math.max(xMinLens, Math.min(xMaxLens, x));
-  y = Math.max(yMinLens, Math.min(yMaxLens, y));
-
-  lensCv.style.transform = `translate(${x - LENS_R}px, ${y - LENS_R}px)`;
-
-  const nx = (x - g.left) / g.w;
-  const ny = (y - g.top)  / g.h;
-
-  const imgPX = nx * naturalW;
-  const imgPY = ny * naturalH;
+  // исходный прямоугольник выборки (может выходить за границы)
   const sx = imgPX - srcW/2;
   const sy = imgPY - srcH/2;
 
+  // пересечение с изображением
+  const sx0 = Math.max(0, sx);
+  const sy0 = Math.max(0, sy);
+  const ex  = Math.min(naturalW, sx + srcW);
+  const ey  = Math.min(naturalH, sy + srcH);
+  const sw  = Math.max(0, ex - sx0);
+  const sh  = Math.max(0, ey - sy0);
+
+  // куда рисовать внутри круга (смещаем, если часть вышла)
+  const scaleX = LENS_D / srcW;
+  const scaleY = LENS_D / srcH;
+  const dx = (sx0 - sx) * scaleX;
+  const dy = (sy0 - sy) * scaleY;
+  const dw = sw * scaleX;
+  const dh = sh * scaleY;
+
+  // рисуем
   lctx.clearRect(0,0,LENS_D,LENS_D);
   lctx.save();
   lctx.beginPath(); lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2); lctx.clip();
   lctx.imageSmoothingEnabled = true;
-  lctx.drawImage(imgMain, sx, sy, srcW, srcH, 0, 0, LENS_D, LENS_D);
+
+  // прозрачная подложка (если часть вне изображения)
+  lctx.clearRect(0,0,LENS_D,LENS_D);
+
+  if(sw>0 && sh>0){
+    lctx.drawImage(imgMain, sx0, sy0, sw, sh, dx, dy, dw, dh);
+  }
   lctx.restore();
+
+  // контур
   lctx.beginPath(); lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
   lctx.strokeStyle = 'rgba(0,0,0,.28)'; lctx.lineWidth = 3; lctx.stroke();
+}
+
+/* вкл/выкл лупы и глобальные обработчики */
+function enableGlobalMove(){
+  if(!moveHandler){
+    moveHandler = (e)=>{ if(!zoomOn) return; drawLensAt(e.clientX, e.clientY); };
+    window.addEventListener('mousemove', moveHandler, {passive:true});
+  }
+  if(!touchHandler){
+    touchHandler = (e)=>{ if(!zoomOn) return; const t=e.touches[0]; drawLensAt(t.clientX, t.clientY); };
+    window.addEventListener('touchmove', touchHandler, {passive:true});
+    window.addEventListener('touchstart', touchHandler, {passive:true});
+  }
+}
+function disableGlobalMove(){
+  if(moveHandler){ window.removeEventListener('mousemove', moveHandler); moveHandler=null; }
+  if(touchHandler){
+    window.removeEventListener('touchmove', touchHandler);
+    window.removeEventListener('touchstart', touchHandler);
+    touchHandler=null;
+  }
 }
 
 zoomBtn.addEventListener('click', ()=>{
@@ -480,15 +529,13 @@ zoomBtn.addEventListener('click', ()=>{
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
   lensCv.style.display = zoomOn ? 'block' : 'none';
   if(zoomOn){
+    enableGlobalMove();
     const r = stage.getBoundingClientRect();
     drawLensAt(r.left + r.width/2, r.top + r.height/2);
+  }else{
+    disableGlobalMove();
   }
 });
-stage.addEventListener('mousemove', e=>{ if(zoomOn) drawLensAt(e.clientX, e.clientY); });
-stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lensCv.style.display='none'; });
-stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lensCv.style.display='block'; });
-stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lensCv.style.display='block'; drawLensAt(t.clientX,t.clientY); }, {passive:true});
-stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; drawLensAt(t.clientX,t.clientY); }, {passive:true});
 
 window.addEventListener('resize', ()=>{
   if(!currentSrc) return;
