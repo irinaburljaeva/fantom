@@ -49,7 +49,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 /* magnifier (canvas) */
 .lens-canvas{
   position:absolute; top:0; left:0;
-  width:180px; height:180px;
+  width:180px; height:180px;           /* визуальный диаметр лупы */
   border-radius:50%;
   border:3px solid rgba(0,0,0,.28);
   box-shadow:0 8px 24px rgba(0,0,0,.28);
@@ -438,9 +438,10 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА (canvas, pixel-perfect) ===== */
+/* ===== ЛУПА (canvas, pixel-perfect, edge-safe) ===== */
 let zoomOn=false;
 
+// Текущая геометрия отображённого IMG
 function currentImgGeom(){
   return {
     w: parseFloat(lensCv.dataset.w || imgMain.width),
@@ -456,39 +457,63 @@ function syncLensGeomFromImg(){
   lensCv.dataset.w=g.w; lensCv.dataset.h=g.h; lensCv.dataset.left=g.left; lensCv.dataset.top=g.top;
 }
 
+// Рисуем лупу с клампом так, чтобы ВЕСЬ круг был заполнен изображением
 function drawLensAt(clientX, clientY){
   if(!zoomOn) return;
 
   const stageRect = stage.getBoundingClientRect();
+  // Базовые координаты внутри сцены
   let x = Math.max(stageRect.left, Math.min(stageRect.right, clientX)) - stageRect.left;
   let y = Math.max(stageRect.top,  Math.min(stageRect.bottom, clientY)) - stageRect.top;
 
+  // Геометрия IMG (как он уложен по cover)
+  const g = currentImgGeom();
+
+  // Пересчёт масштаба: сколько натуральных пикселей приходится на 1px сцены
+  const pxPerStageX = naturalW / g.w;
+  const pxPerStageY = naturalH / g.h;
+
+  // Размер источника (в исходных пикселях), который увеличим до диаметра лупы
+  const srcW = (LENS_D / ZOOM) * pxPerStageX;
+  const srcH = (LENS_D / ZOOM) * pxPerStageY;
+
+  // ---- EDGE-SAFE КЛАМП ПО КООРДИНАТЕ КУРСОРА ----
+  // Требование: прямоугольник источника (центр в imgPX,imgPY, размер srcW x srcH) должен полностью лежать внутри исходного изображения.
+  // Из этого выводим допустимые границы для нормированных координат nx,ny (0..1).
+  const nxMin = (srcW/2) / naturalW;
+  const nxMax = 1 - nxMin;
+  const nyMin = (srcH/2) / naturalH;
+  const nyMax = 1 - nyMin;
+
+  // Конвертируем границы в координаты сцены (px)
+  const xMinStage = g.left + nxMin * g.w;
+  const xMaxStage = g.left + nxMax * g.w;
+  const yMinStage = g.top  + nyMin * g.h;
+  const yMaxStage = g.top  + nyMax * g.h;
+
+  // Клампим курсор (центр лупы) так, чтобы круг был полностью заполнен изображением
+  x = Math.max(xMinStage, Math.min(xMaxStage, x));
+  y = Math.max(yMinStage, Math.min(yMaxStage, y));
+  // -----------------------------------------------
+
+  // Позиция визуальной лупы (чтобы центр совпадал с (x,y))
   const lx = x - LENS_R;
   const ly = y - LENS_R;
   lensCv.style.transform = `translate(${lx}px, ${ly}px)`;
 
-  const g = currentImgGeom();
+  // Нормированные координаты внутри видимого IMG (0..1)
+  const nx = (x - g.left) / g.w;
+  const ny = (y - g.top)  / g.h;
 
-  let nx = (x - g.left) / g.w;
-  let ny = (y - g.top)  / g.h;
-  nx = Math.max(0, Math.min(1, nx));
-  ny = Math.max(0, Math.min(1, ny));
-
-  const pxPerStageX = naturalW / g.w;
-  const pxPerStageY = naturalH / g.h;
+  // Центр выреза в исходных пикселях
   const imgPX = nx * naturalW;
   const imgPY = ny * naturalH;
 
-  const srcW = (LENS_D / ZOOM) * pxPerStageX;
-  const srcH = (LENS_D / ZOOM) * pxPerStageY;
-  let sx = imgPX - srcW/2;
-  let sy = imgPY - srcH/2;
+  // Итоговые углы выреза (исходник) уже гарантированно внутри (благодаря клампу)
+  const sx = imgPX - srcW/2;
+  const sy = imgPY - srcH/2;
 
-  if(sx < 0) sx = 0;
-  if(sy < 0) sy = 0;
-  if(sx + srcW > naturalW) sx = naturalW - srcW;
-  if(sy + srcH > naturalH) sy = naturalH - srcH;
-
+  // Рендер в канвас-лупу
   lctx.clearRect(0,0,LENS_D,LENS_D);
   lctx.save();
   lctx.beginPath();
@@ -499,6 +524,7 @@ function drawLensAt(clientX, clientY){
   lctx.drawImage(imgMain, sx, sy, srcW, srcH, 0, 0, LENS_D, LENS_D);
   lctx.restore();
 
+  // Рамка
   lctx.beginPath();
   lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
   lctx.strokeStyle = 'rgba(0,0,0,.28)';
@@ -515,11 +541,15 @@ zoomBtn.addEventListener('click', ()=>{
     drawLensAt(r.left + r.width/2, r.top + r.height/2);
   }
 });
+
+// Мышь/тач
 stage.addEventListener('mousemove', e=>{ if(zoomOn) drawLensAt(e.clientX, e.clientY); });
 stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lensCv.style.display='none'; });
 stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lensCv.style.display='block'; });
 stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lensCv.style.display='block'; drawLensAt(t.clientX,t.clientY); }, {passive:true});
 stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; drawLensAt(t.clientX,t.clientY); }, {passive:true});
+
+// При изменении размера окна — пересчитать геометрию IMG и синхронизировать с лупой
 window.addEventListener('resize', ()=>{
   if(!currentSrc) return;
   syncLensGeomFromImg();
