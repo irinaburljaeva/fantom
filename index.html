@@ -45,6 +45,12 @@ blockquote.msg p{margin:0;font-size:.97em}
 .pill{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:8px 12px;font-size:.95rem}
 .dock{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
 
+/* magnifier */
+.tool-btn{background:#fff;color:var(--text);border:1px solid rgba(0,0,0,.12);padding:8px 12px;border-radius:10px}
+.tool-btn[aria-pressed="true"]{border-color:var(--brand);box-shadow:0 0 0 2px rgba(226,74,39,.15)}
+.lens{position:absolute;top:0;left:0;width:140px;height:140px;border-radius:50%;border:3px solid rgba(0,0,0,.25);box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none;display:none;z-index:5;background-repeat:no-repeat;backdrop-filter:none}
+
+/* side panel */
 .side{flex:0 0 340px;background:var(--panel);border-radius:16px;padding:16px;border:1px solid rgba(0,0,0,.06);box-shadow:0 8px 20px rgba(0,0,0,.1);display:none}
 .side h3{margin:0 0 8px}
 .side p{margin:0 0 10px}
@@ -103,8 +109,11 @@ blockquote.msg p{margin:0;font-size:.97em}
       <div id="bg" class="layer"></div>
       <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
       <div id="loader" class="loader"><div class="ring"></div></div>
+      <!-- ЛУПА -->
+      <div id="lens" class="lens" aria-hidden="true"></div>
     </div>
     <div class="dock">
+      <button id="zoomBtn" type="button" class="tool-btn" aria-pressed="false" title="Лупа">🔍 Лупа</button>
       <div id="levelTask" class="pill">Найди Шагуню на картинке</div>
       <div class="pill">Очки: <span id="score">0</span></div>
     </div>
@@ -195,7 +204,7 @@ const GAME_CONFIG = {
         ['march1m','Пошагать 1 минуту']
       ]
     },
-    // 4 — по ТВОЕМУ ТЕКСТУ, полигон и сдвиг найденного фона вниз
+    // 4 — сдвиг найденного фона вниз
     {
       bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
       poly: [
@@ -212,7 +221,7 @@ const GAME_CONFIG = {
         ['stretch5','15 минут мягкой растяжки']
       ]
     },
-    // 5 — финальный, полигон
+    // 5 — финальный
     {
       bg: ASSETS.lvl5, bgFound: ASSETS.lvl5found,
       poly: [
@@ -240,13 +249,20 @@ const sidePanel=$('#sidePanel'), levelTask=$('#levelTask');
 const levelLabel=$('#levelLabel'), progressBar=$('#progressBar');
 const reportBtn=$('#reportBtn'), nextBtn=$('#nextBtn'), toast=$('#toast');
 const hintText=$('#hintText'), reportOptions=$('#reportOptions'), scoreEl=$('#score');
+
+/* magnifier DOM */
+const zoomBtn=$('#zoomBtn'), lens=$('#lens');
+
 const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
 
 /* ===== СОСТОЯНИЕ ===== */
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
+let zoomOn = false;
+let currentBgSrc = '';
+let currentBgPos = 'center';
 
-/* ===== ПРЕЛОАД + ЛОАДЕР (без гонок) ===== */
+/* ===== ПРЕЛОАД + ЛОАДЕР ===== */
 function preload(src){
   return new Promise((resolve)=>{
     const img=new Image();
@@ -257,19 +273,17 @@ function preload(src){
   });
 }
 let loadSeq = 0;
-function showLoader(seq){
-  if(seq !== loadSeq) return;
-  loader.style.display = 'grid';
-}
+function showLoader(seq){ if(seq !== loadSeq) return; loader.style.display = 'grid'; }
 function hideLoader(seq){
   if(seq !== loadSeq) return;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    loader.style.display = 'none';
-  }));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display = 'none'; }));
 }
 
 /* ===== УТИЛИТЫ ===== */
 function setBg(url, pos='center'){
+  currentBgSrc = url;
+  currentBgPos = pos;
+  // апдейтим фон основного слоя
   bgLayer.style.opacity='0';
   setTimeout(()=>{
     bgLayer.style.backgroundImage=`url('${url}')`;
@@ -277,9 +291,12 @@ function setBg(url, pos='center'){
     bgLayer.style.backgroundPosition=pos;
     bgLayer.style.opacity='1';
   }, 20);
+  // апдейтим фон лупы
+  lens.style.backgroundImage = `url('${url}')`;
+  updateLensBackgroundSize(); // подстроить масштаб
 }
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
-function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100 }; }
+function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100, rect:r }; }
 function inside(p,r){ return p.x>=r.x-r.w/2 && p.x<=r.x+r.w/2 && p.y>=r.y-r.h/2 && p.y<=r.y+r.h/2; }
 function pointInPoly(pt, poly){
   let inside=false;
@@ -327,7 +344,7 @@ async function startLevel(i){
   nextBtn.setAttribute('aria-disabled','true');
   updateHud();
 
-  // ➕ СОХРАНЯЕМ ТЕКУЩИЙ УРОВЕНЬ (чтобы после перерыва вернуться в него)
+  // ➕ СОХРАНЯЕМ ТЕКУЩИЙ УРОВЕНЬ
   localStorage.setItem('current_level', i);
 
   const L = GAME_CONFIG.levels[i];
@@ -425,6 +442,55 @@ nextBtn.onclick = () => {
     showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
   }
 };
+
+/* ===== ЛУПА ===== */
+const ZOOM = 2.2; // коэффициент увеличения
+function updateLensBackgroundSize(){
+  // размер фона лупы в пикселях соответствует увеличенному слою stage
+  const r = stage.getBoundingClientRect();
+  lens.style.backgroundSize = `${ZOOM*100}% ${ZOOM*100}%`;
+}
+function moveLens(clientX, clientY){
+  if(!zoomOn) return;
+  const r = stage.getBoundingClientRect();
+  let x = clientX - r.left;
+  let y = clientY - r.top;
+  // ограничим в пределах сцены
+  x = Math.max(0, Math.min(r.width, x));
+  y = Math.max(0, Math.min(r.height, y));
+
+  const lx = x - lens.offsetWidth/2;
+  const ly = y - lens.offsetHeight/2;
+  lens.style.transform = `translate(${lx}px, ${ly}px)`;
+
+  // позиционирование фона лупы в процентах
+  const px = (x / r.width) * 100;
+  const py = (y / r.height) * 100;
+  lens.style.backgroundPosition = `${px}% ${py}%`;
+}
+zoomBtn.addEventListener('click', ()=>{
+  zoomOn = !zoomOn;
+  zoomBtn.setAttribute('aria-pressed', String(zoomOn));
+  lens.style.display = zoomOn ? 'block' : 'none';
+  if(zoomOn){
+    updateLensBackgroundSize();
+  }
+});
+stage.addEventListener('mousemove', e=> moveLens(e.clientX, e.clientY));
+stage.addEventListener('touchmove', e=>{
+  if(!zoomOn) return;
+  const t = e.touches[0];
+  moveLens(t.clientX, t.clientY);
+}, {passive:true});
+stage.addEventListener('touchstart', e=>{
+  if(!zoomOn) return;
+  const t = e.touches[0];
+  lens.style.display='block';
+  moveLens(t.clientX, t.clientY);
+}, {passive:true});
+stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lens.style.display='none'; });
+stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lens.style.display='block'; });
+window.addEventListener('resize', ()=>{ if(zoomOn) updateLensBackgroundSize(); });
 </script>
 </body>
 </html>
