@@ -49,7 +49,7 @@ blockquote.msg p{margin:0;font-size:.97em}
 /* magnifier (canvas) */
 .lens-canvas{
   position:absolute; top:0; left:0;
-  width:180px; height:180px;           /* визуальный диаметр лупы */
+  width:180px; height:180px;
   border-radius:50%;
   border:3px solid rgba(0,0,0,.28);
   box-shadow:0 8px 24px rgba(0,0,0,.28);
@@ -115,12 +115,9 @@ blockquote.msg p{margin:0;font-size:.97em}
 <section class="play-wrap" id="gameWrap">
   <div class="stage-wrap">
     <div id="stage" class="stage">
-      <!-- Основное изображение уровня (точный cover) -->
       <img id="imgMain" alt="" draggable="false" />
-      <!-- Эффекты -->
       <div id="celebrate" class="celebrate"><div class="heart">💖</div></div>
       <div id="loader" class="loader"><div class="ring"></div></div>
-      <!-- ЛУПА (canvas) -->
       <canvas id="lens" class="lens-canvas" width="180" height="180" aria-hidden="true"></canvas>
     </div>
     <div class="dock">
@@ -143,7 +140,6 @@ blockquote.msg p{margin:0;font-size:.97em}
   </aside>
 </section>
 
-<!-- Модалка отчёта -->
 <section id="reportModal" class="modal">
   <div class="card">
     <h4>Отчёт по заданию</h4>
@@ -161,7 +157,6 @@ blockquote.msg p{margin:0;font-size:.97em}
 <div id="toast" class="toast"></div>
 
 <script>
-/* ===== АССЕТЫ ===== */
 const ASSETS = {
   start:'start.jpg',
   lvl1:'lvl1.jpg',       lvl1found:'lvl1found.jpg',
@@ -171,7 +166,6 @@ const ASSETS = {
   lvl5:'lvl5.jpg',       lvl5found:'lvl5found.jpg'
 };
 
-/* ===== КОНФИГ УРОВНЕЙ ===== */
 const GAME_CONFIG = {
   levels: [
     { // 1
@@ -198,7 +192,7 @@ const GAME_CONFIG = {
       taskText: '🎯 Задание: сделать 500 шагов под музыку или пошагать на месте 1 минуту.',
       options: [['steps500','500 шагов под музыку'],['march1m','Пошагать 1 минуту']]
     },
-    { // 4 — зарядка
+    { // 4
       bg: ASSETS.lvl4, bgFound: ASSETS.lvl4found, bgFoundPos: 'center 58%',
       poly: [[28.04,91.96],[30.05,93.68],[28.20,96.39],[26.96,94.18]],
       introTitle: 'В здоровом теле — здоровый дух!',
@@ -217,7 +211,6 @@ const GAME_CONFIG = {
   ]
 };
 
-/* ===== DOM ===== */
 const $=s=>document.querySelector(s);
 const introImg=$('#introImg'), startBtn=$('#startBtn'),
       stage=$('#stage'), imgMain=$('#imgMain');
@@ -226,20 +219,19 @@ const sidePanel=$('#sidePanel'), levelTask=$('#levelTask');
 const levelLabel=$('#levelLabel'), progressBar=$('#progressBar');
 const reportBtn=$('#reportBtn'), nextBtn=$('#nextBtn'), toast=$('#toast');
 const hintText=$('#hintText'), reportOptions=$('#reportOptions'), scoreEl=$('#score');
+
 const reportModal=$('#reportModal'), cancelReport=$('#cancelReport'), submitReport=$('#submitReport');
 
-/* magnifier DOM */
 const zoomBtn=$('#zoomBtn'), lensCv=$('#lens'), lctx=lensCv.getContext('2d',{alpha:true});
 
-/* ===== СОСТОЯНИЕ ===== */
 let currentLevel = 0;
 let state = { found:false, taskDone:false, score:0 };
 let currentSrc = '', currentBgPos = 'center';
-let naturalW = 0, naturalH = 0; // натуральные размеры картинки
-const LENS_D = 180, LENS_R = LENS_D/2; // лупа
+let naturalW = 0, naturalH = 0;
+
+const LENS_D = 180, LENS_R = LENS_D/2;
 const ZOOM = 2.2;
 
-/* ===== ПРЕЛОАД + ЛОАДЕР ===== */
 function preload(src){
   return new Promise((resolve)=>{
     const img=new Image();
@@ -250,10 +242,9 @@ function preload(src){
   });
 }
 let loadSeq = 0;
-function showLoader(seq){ if(seq !== loadSeq) return; loader.style.display = 'grid'; }
-function hideLoader(seq){ if(seq !== loadSeq) return; requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display = 'none'; })); }
+function showLoader(seq){ if(seq !== loadSeq) return; loader.style.display='grid'; }
+function hideLoader(seq){ if(seq !== loadSeq) return; requestAnimationFrame(()=>requestAnimationFrame(()=>{ loader.style.display='none'; })); }
 
-/* ===== УТИЛИТЫ ===== */
 function showToast(msg,t=1600){ toast.textContent=msg; toast.style.display='block'; clearTimeout(showToast.tid); showToast.tid=setTimeout(()=>toast.style.display='none',t); }
 function clickPt(e){ const r=stage.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*100, y:(e.clientY-r.top)/r.height*100, rect:r }; }
 function inside(p,r){ return p.x>=r.x-r.w/2 && p.x<=r.x+r.w/2 && p.y>=r.y-r.h/2 && p.y<=r.y+r.h/2; }
@@ -273,10 +264,8 @@ function updateHud(){
   progressBar.style.width = Math.round(done/total*100) + '%';
 }
 
-/* ===== ИНТРО ===== */
 preload(ASSETS.start).then(({src})=>{ introImg.src=src; introImg.onload=()=>introImg.classList.add('ready'); });
 
-/* ===== background-position парсер ===== */
 function parseBgPos(pos){
   let x='50%', y='50%';
   if(typeof pos==='string'){
@@ -288,8 +277,6 @@ function parseBgPos(pos){
   const toF = v => (String(v).endsWith('%') ? parseFloat(v)/100 : 0.5);
   return {px:toF(x), py:toF(y)};
 }
-
-/* ===== cover-геометрия + позиция для IMG ===== */
 function layoutCoverForImg(containerW, containerH, imgW, imgH, posStr){
   if(!imgW||!imgH) return {w:containerW,h:containerH,left:0,top:0};
   const {px,py} = parseBgPos(posStr||'50% 50%');
@@ -302,8 +289,6 @@ function layoutCoverForImg(containerW, containerH, imgW, imgH, posStr){
   const top  = (containerH - h) * py;
   return {w,h,left,top};
 }
-
-/* ===== установка картинки уровня ===== */
 function setImage(url, pos='center'){
   currentSrc = url; currentBgPos = pos;
   imgMain.style.opacity='0';
@@ -311,14 +296,12 @@ function setImage(url, pos='center'){
   imgMain.onload = () => {
     naturalW = imgMain.naturalWidth;
     naturalH = imgMain.naturalHeight;
-    // выставляем точный cover
     const r = stage.getBoundingClientRect();
     const g = layoutCoverForImg(r.width, r.height, naturalW, naturalH, pos);
     Object.assign(imgMain.style, {
       width: g.w + 'px', height: g.h + 'px',
       left: g.left + 'px', top: g.top + 'px', opacity:'1'
     });
-    // синхронизируем геометрию для лупы
     lensCv.dataset.w = g.w; 
     lensCv.dataset.h = g.h; 
     lensCv.dataset.left = g.left; 
@@ -326,7 +309,6 @@ function setImage(url, pos='center'){
   };
 }
 
-/* ===== СТАРТ ===== */
 startBtn.onclick=()=>{
   document.body.classList.remove('prestart');
   document.body.classList.add('started');
@@ -342,7 +324,6 @@ startBtn.onclick=()=>{
   startLevel(saved);
 };
 
-/* ===== ЗАПУСК УРОВНЯ ===== */
 async function startLevel(i){
   currentLevel = i;
   state.found = false; state.taskDone = false;
@@ -380,7 +361,6 @@ async function startLevel(i){
   };
 }
 
-/* ===== НАЙДЕНО ===== */
 async function onFound(L, idx){
   state.found = true;
 
@@ -410,7 +390,6 @@ async function onFound(L, idx){
   nextBtn.style.display = (idx === last) ? 'none' : 'inline-block';
 }
 
-/* ===== ОТЧЁТ ===== */
 reportBtn.onclick = () => reportModal.style.display = 'grid';
 cancelReport.onclick = () => reportModal.style.display = 'none';
 submitReport.onclick = () => {
@@ -430,7 +409,6 @@ submitReport.onclick = () => {
   updateHud();
 };
 
-/* ===== СЛЕДУЮЩИЙ УРОВЕНЬ ===== */
 nextBtn.onclick = () => {
   if(!state.taskDone){ showToast('Сначала выполни задание от Шагуни 🙃', 2000); return; }
   const last = GAME_CONFIG.levels.length - 1;
@@ -438,10 +416,9 @@ nextBtn.onclick = () => {
   else showToast('Поздравляем! Все уровни пройдены! 🎉',2200);
 };
 
-/* ===== ЛУПА (canvas, pixel-perfect, edge-safe) ===== */
+/* ===== ЛУПА (canvas) — edge-safe + stage-safe ===== */
 let zoomOn=false;
 
-// Текущая геометрия отображённого IMG
 function currentImgGeom(){
   return {
     w: parseFloat(lensCv.dataset.w || imgMain.width),
@@ -457,81 +434,57 @@ function syncLensGeomFromImg(){
   lensCv.dataset.w=g.w; lensCv.dataset.h=g.h; lensCv.dataset.left=g.left; lensCv.dataset.top=g.top;
 }
 
-// Рисуем лупу с клампом так, чтобы ВЕСЬ круг был заполнен изображением
 function drawLensAt(clientX, clientY){
   if(!zoomOn) return;
 
   const stageRect = stage.getBoundingClientRect();
-  // Базовые координаты внутри сцены
   let x = Math.max(stageRect.left, Math.min(stageRect.right, clientX)) - stageRect.left;
   let y = Math.max(stageRect.top,  Math.min(stageRect.bottom, clientY)) - stageRect.top;
 
-  // Геометрия IMG (как он уложен по cover)
   const g = currentImgGeom();
-
-  // Пересчёт масштаба: сколько натуральных пикселей приходится на 1px сцены
   const pxPerStageX = naturalW / g.w;
   const pxPerStageY = naturalH / g.h;
 
-  // Размер источника (в исходных пикселях), который увеличим до диаметра лупы
   const srcW = (LENS_D / ZOOM) * pxPerStageX;
   const srcH = (LENS_D / ZOOM) * pxPerStageY;
 
-  // ---- EDGE-SAFE КЛАМП ПО КООРДИНАТЕ КУРСОРА ----
-  // Требование: прямоугольник источника (центр в imgPX,imgPY, размер srcW x srcH) должен полностью лежать внутри исходного изображения.
-  // Из этого выводим допустимые границы для нормированных координат nx,ny (0..1).
-  const nxMin = (srcW/2) / naturalW;
-  const nxMax = 1 - nxMin;
-  const nyMin = (srcH/2) / naturalH;
-  const nyMax = 1 - nyMin;
-
-  // Конвертируем границы в координаты сцены (px)
-  const xMinStage = g.left + nxMin * g.w;
-  const xMaxStage = g.left + nxMax * g.w;
-  const yMinStage = g.top  + nyMin * g.h;
-  const yMaxStage = g.top  + nyMax * g.h;
-
-  // Клампим курсор (центр лупы) так, чтобы круг был полностью заполнен изображением
+  // 1) кламп по источнику, чтобы картинка не обрезалась внутри лупы
+  const nxMin = (srcW/2) / naturalW, nxMax = 1 - nxMin;
+  const nyMin = (srcH/2) / naturalH, nyMax = 1 - nyMin;
+  const xMinStage = g.left + nxMin * g.w, xMaxStage = g.left + nxMax * g.w;
+  const yMinStage = g.top  + nyMin * g.h, yMaxStage = g.top  + nyMax * g.h;
   x = Math.max(xMinStage, Math.min(xMaxStage, x));
   y = Math.max(yMinStage, Math.min(yMaxStage, y));
-  // -----------------------------------------------
 
-  // Позиция визуальной лупы (чтобы центр совпадал с (x,y))
-  const lx = x - LENS_R;
-  const ly = y - LENS_R;
-  lensCv.style.transform = `translate(${lx}px, ${ly}px)`;
+  // 2) кламп по рамке сцены, чтобы круг лупы не «обрезался» краем stage
+  const xMinLens = LENS_R, xMaxLens = stageRect.width  - LENS_R;
+  const yMinLens = LENS_R, yMaxLens = stageRect.height - LENS_R;
+  x = Math.max(xMinLens, Math.min(xMaxLens, x));
+  y = Math.max(yMinLens, Math.min(yMaxLens, y));
 
-  // Нормированные координаты внутри видимого IMG (0..1)
+  // позиция визуальной лупы
+  lensCv.style.transform = `translate(${x - LENS_R}px, ${y - LENS_R}px)`;
+
+  // нормированные координаты внутри IMG (после обоих клампов)
   const nx = (x - g.left) / g.w;
   const ny = (y - g.top)  / g.h;
 
-  // Центр выреза в исходных пикселях
   const imgPX = nx * naturalW;
   const imgPY = ny * naturalH;
-
-  // Итоговые углы выреза (исходник) уже гарантированно внутри (благодаря клампу)
   const sx = imgPX - srcW/2;
   const sy = imgPY - srcH/2;
 
-  // Рендер в канвас-лупу
   lctx.clearRect(0,0,LENS_D,LENS_D);
   lctx.save();
-  lctx.beginPath();
-  lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
-  lctx.closePath();
-  lctx.clip();
+  lctx.beginPath(); lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2); lctx.clip();
   lctx.imageSmoothingEnabled = true;
   lctx.drawImage(imgMain, sx, sy, srcW, srcH, 0, 0, LENS_D, LENS_D);
   lctx.restore();
-
-  // Рамка
-  lctx.beginPath();
-  lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
-  lctx.strokeStyle = 'rgba(0,0,0,.28)';
-  lctx.lineWidth = 3;
-  lctx.stroke();
+  lctx.beginPath(); lctx.arc(LENS_R, LENS_R, LENS_R-1.5, 0, Math.PI*2);
+  lctx.strokeStyle = 'rgba(0,0,0,.28)'; lctx.lineWidth = 3; lctx.stroke();
 }
 
+const zoomBtn=$("#zoomBtn");
 zoomBtn.addEventListener('click', ()=>{
   zoomOn = !zoomOn;
   zoomBtn.setAttribute('aria-pressed', String(zoomOn));
@@ -541,15 +494,12 @@ zoomBtn.addEventListener('click', ()=>{
     drawLensAt(r.left + r.width/2, r.top + r.height/2);
   }
 });
-
-// Мышь/тач
 stage.addEventListener('mousemove', e=>{ if(zoomOn) drawLensAt(e.clientX, e.clientY); });
 stage.addEventListener('mouseleave', ()=>{ if(zoomOn) lensCv.style.display='none'; });
 stage.addEventListener('mouseenter', ()=>{ if(zoomOn) lensCv.style.display='block'; });
 stage.addEventListener('touchstart', e=>{ if(!zoomOn) return; const t=e.touches[0]; lensCv.style.display='block'; drawLensAt(t.clientX,t.clientY); }, {passive:true});
 stage.addEventListener('touchmove',  e=>{ if(!zoomOn) return; const t=e.touches[0]; drawLensAt(t.clientX,t.clientY); }, {passive:true});
 
-// При изменении размера окна — пересчитать геометрию IMG и синхронизировать с лупой
 window.addEventListener('resize', ()=>{
   if(!currentSrc) return;
   syncLensGeomFromImg();
